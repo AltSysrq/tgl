@@ -1,0 +1,212 @@
+TGL -- Text Generation Language
+
+Dependencies:
+  Nothing beyond the standard UNIX headers.
+Building:
+  ./configure
+  make
+Installing:
+  make install
+(or "sudo make install").
+
+---
+
+TGL is a simple, terse system for generating text from an input string. It is
+intended to be used as a sort of macro system with a real editor (eg, with
+shell-command-on-region in Emacs) rather than a real programming language. As
+such, it is optimised ONLY for terseness, with no focus on readability at all.
+
+BASICS
+
+Every value in TGL is a string. These strings may be pushed onto/popped from a
+single stack, stored into registers (one for every printable ASCII character),
+interpreted as integers, and executed as code.
+
+Like in TECO, every TGL command is a single character, and each character in
+TGL code is executed in sequence. Some commands will modify the input pointer,
+giving the illusion of deeper structure. Most commands operate only on strings
+at the top of the primary stack. Whitespace is ignored on execution.
+
+Integers follow the format
+  [+-]?([0-9]+|0x[0-9]+)
+
+A boolean is true if it is a non-empty string which is not equal to any
+representation of integer zero.
+
+CONTEXT
+
+The interpreter may be run with a given context (if none is given, it is the
+empty string). Context can be used for conditional inclusion in the user's
+library of macros (see "D", defun-contextual).
+
+COMMANDS
+
+Built-in commands are:
+  Q...  (long-command: ??? -> ???)
+    Skips input characters up to the next whitespace. The skipped characters
+    are interpreted as a long command name, which is then executed. Execution
+    then continues with the first whitespace character.
+  .     (print: string -> ())
+    The string at the top of the stack is printed to stdout.
+  'C    (char: () -> string)
+    The instruction pointer is advanced one space, and the character C is
+    pushed onto the stack as a one-character string.
+    If C is greater than 127, more characters will be read into the string
+    until one less than 128 is encountered, which is not added. This allows a
+    single UTF-8 character to be pushed by this method.
+  :     (dupe: item -> item item)
+    The top item on the stack is duplicated.
+  ;     (drop: item -> ())
+    The top item on the stack is popped and discarded.
+  x     (swap: a b -> b a)
+    The top two items on the stack are swapped.
+  c     (concat: a b -> ab)
+    Pops the top two elements from the stack and pushed their concatenation.
+  l     (length: string -> length)
+    Pops a string and pushes the integer length of the string.
+  C     (char-at: string index -> char)
+    Pops a string and an index, and pushes the character at the given index.
+  s     (substr: string from to -> substr)
+    Pops a string and two indices, and returns a substring between the two
+    (including from excluding to).
+  S     (suffix: string from -> substr)
+    Like substr, but assumes to is the end of the string.
+  +     (add: a b -> (a+b))
+  -     (sub: a b -> (a-b))
+  *     (mul: a b -> (a*b))
+  /     (div: a b -> (a/b))
+  %     (mod: a b -> (a-a/b))
+    The two top stack elements are popped and interpreted as integers, and the
+    result of the respective arithmetic operation is pushed onto the stack.
+  =     (equal: a b -> (a==b? 1:0))
+  !     (not-equal: a b -> (a!=b? 1:0))
+    The two top stack elements are popped, and the result of the (string)
+    comparison is pushed.
+  <     (less: a b -> (a<b? 1:0))
+  >     (greater: a + -> (a>b? 1:0))
+    The two top stack elements are popped and interpreted as integers, and the
+    result of the comparison is pushed.
+  {     (string-less: a b -> (a<b? 1:0))
+  }     (string-greater: a b -> (a>b? 1:0))
+    Like < and >, but perform string comparisons.
+  &     (and: a b -> (a && b))
+  |     (or:  a b -> (a || b))
+  ^     (xor: a b -> (a ^  b))
+    Pops the two top elements from the stack, and pushes the result of the
+    given logical operation to the stack. No short-circuiting occurs.
+  ~     (not: a -> !a)
+    Pops an element from the top of the stack, and pushes its logical negation.
+  (...) (code: () -> string)
+    The literal string between the (balanced) parentheses is pushed. Execution
+    continues after the closing parenthesis.
+  i     (if: cond then else -> ???)
+    If cond (value) is true, execute then; otherwise, execute else.
+  I     (if-short: cond then -> ???)
+    Like if, but do nothing if cond false.
+  w     (while: cond code -> ???)
+    Executes cond. If the top of the stack (popped) is true, execute code and
+    repeat.
+  W     (short-while: code -> ???)
+    Evaluate code. If the top of the stack (popped) is true, repeat.
+  u     (until: cond code -> ???)
+    Like while, but negate the result of cond.
+  U     (short-until: code -> ???)
+    Like short-while, but negate the result of code.
+  f     (for: reg from to body -> ???)
+    Execute body with reg set to increasing values starting at from and ending
+    (but not including) to.
+  F     (short-for: to body -> ???)
+    Like for, but assumes the register is "i" and from is "0".
+  d     (defun: name body -> ())
+    Defines the command of the given name. If it already exists, it is replaced.
+    It may be more than one character long. After running this, the command can
+    be invoked normally.
+  D     (defun-contextual: name body -> ())
+    Like defun, but does nothing if the current context is inactive.
+  X     (eval: code -> ???)
+    Evaluates code.
+  rC    (read: () -> string)
+    Pushes the contents of register C to the stack.
+  RC    (write: string -> ())
+    Pops the top stack value into register C.
+  "..." (string: ??? -> string)
+    Pushes an interpolated string to the stack. The following characters are
+    considered special:
+      "        Terminates the string; execution continues after the ".
+      \        Evaluates the \ command and interpolates the result.
+      $        Reads the character after the $ and splices the value of that
+               register into the string.
+      %        Pops a value from the stack and splices the value into the
+               string.
+      `        Expands to the whitespace encountered before the first real
+               command in the primary input string.
+  \...  (escape: () -> string)
+    Pushes a single character corresponding to the full escape sequence:
+      \a       BEL
+      \b       Backspace
+      \e       ESC
+      \f       FF
+      \n       LF
+      \r       CR
+      \t       HT
+      \v       VT
+      \x##     The character ## (hexadecimal)
+    The following sequences result in simply the character being escaped:
+      \" \\ \$ \% \`
+  #     (number: () -> integer)
+    Skips the #, then reads an optional sign followed by digits and pushes the
+    resulting integer.
+  0,1,2,3,4,5,6,7,8,9
+    Like #, but does not skip the first character.
+  ?     (rand: () -> integer)
+    Returns a random integer between 0 and 65535, inclusive.
+  @C... (context: () -> () or () -> result)
+    Alters the current context. The first character after the @ indicates how
+    to affect the context, and the characters afterward up to but not including
+    the next whitespace indicate what to match. Legal values for C are:
+      =  Set context activeness to the result of the match
+      !  Set context activeness to the negation of the result
+      &  Deactivate context if the result is negative
+      |  Activate context if the result is positive
+      ^  Deactivate context if the result is positive
+      v  Activate context if the result is negative.
+    Other specifiers will query the context:
+      @? Pushes a boolean indicating whether the context is active.
+      @s Pushes the context string itself.
+      @e Pushes the filename extension of the context string, including the ".".
+  `     (suppress-history: () -> ())
+    If executed, the input will not be added to the user's TGL history.
+  h     (history-access: [off] -> ())
+    Expends to the history at the given offset. If the stack is empty when
+    trying to read off, assume 0.
+  v     (save-code: code -> ???)
+    Appends the given code to the user's library after executing it.
+  VC    (save-code-contextual: code -> ???)
+    Like v, but the character C is read, which must be s or e. The written code
+    is prefixed by context statements to limit any definition to this context
+    (s) or file type (e).
+
+EXAMPLES
+
+Hello world:
+  "Hello, world!".
+
+99 Bottles of Beer:
+  99Rc"bottles"RBrcRC(rc#-1>)(
+  "$C $B of beer on the wall\n$C $B bottles of beer\n".
+  rc1-Rc
+  rc1=("bottle")("bottles")iRBrc0=("No more")(rc)iRC
+  rc#-1=(
+    "Go to the store, buy some more\n99 bottles of beer on the wall\n"
+  )(
+    "Take one down, pass it around\n$C $B of beer on the wall\n"
+  )i.)w
+
+Quickly generate case statements for each digit:
+  9("`case '$i':\n".)F
+
+Save the previous to a language-specific macro:
+  "nc"hDVe
+
+Resusing the new macro:
+  _nc
