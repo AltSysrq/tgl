@@ -1,2 +1,11 @@
 *~
 *.log
+deps.*
+stamp-h1
+*.o
+src/tgl
+.deps
+config.status
+autom4te.cache
+Makefile
+config.h
