@@ -185,6 +185,80 @@ static string int_to_string(signed i) {
 }
 /* END: String handling */
 
+/* BEGIN: Interpreter operations */
+
+/* Represents a single stack element. */
+typedef struct stack_elt {
+  /* The datum held in this element. */
+  string value;
+  /* The next item in the stack, or NULL if this is the bottom. */
+  struct stack_elt* next;
+} stack_elt;
+
+/* Defined later. */
+struct interpreter;
+
+/* Defines the function pointer type for native commands.
+ *
+ * A command gets solely the interpreter running it as an argument. The command
+ * may modify the interpreter arbitrarily, though changing the instruction
+ * string will have unexpected behaviour (at least to the user). The
+ * instruction pointer is not incremented until the command returns, and thus
+ * points at the instruction that invoked the command.
+ *
+ * The command returns 1 to indicate success, and 0 to indicate failure. If
+ * failure is a direct result of this command, the command should print a
+ * diagnostic to stderr before returning.
+ */
+typedef int (*native_command)(struct interpreter*);
+
+/* Defines any type of command, either native or user-defined. */
+typedef struct command {
+  /* Whether the command is native. 1=native, 0=user. */
+  int isNative;
+  /* Pointer to either a native_command to call or a string to interpret.
+   * A non-existent command is indicated by the pointers below being NULL.
+   */
+  union {
+    native_command native;
+    string user;
+  } cmd;
+} command;
+
+/* Describes a long command binding.
+ *
+ * Any command whose name is longer than one command is considered a "long
+ * command". Long commands are stored in a linked list.
+ *
+ * While this is hardly optimal, long commands are the exception rather than
+ * the rule, and performance isn't critical anyway.
+ */
+typedef struct long_command {
+  /* The name of this command. */
+  string name;
+  /* The command bound to this name. */
+  command cmd;
+  /* The next long_command in the list, or NULL if it is the last one. */
+  struct long_command* next;
+} long_command;
+
+/* Defines all the data needed to interpret TGL code. */
+typedef struct interpreter {
+  /* All short commands, indexed by character. */
+  command commands[256];
+  /* All registers. Initially initialised to empty strings. */
+  string resigsters[256];
+  /* The stack, initially NULL. */
+  stack_elt* stack;
+  /* The list of long commands, initially NULL. */
+  long_command* long_commands;
+  /* The string currently being executed (NOT owned by the interpreter) */
+  string code;
+  /* The current instruction pointer within the code. */
+  unsigned ip;
+} interpreter;
+/* END: Interpreter operations */
+
 int main(int argc, char** argv) {
   printf("hello world\n");
   return 0;
