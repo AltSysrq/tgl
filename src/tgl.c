@@ -163,6 +163,15 @@ static int string_to_int(string s, signed* dst) {
   return 1;
 }
 
+/* Like string_to_int(), but also frees the input string if successful. */
+static int string_to_int_free(string s, signed* dst) {
+  int success = string_to_int(s, dst);
+  if (success)
+    free(s);
+
+  return success;
+}
+
 /* Converts the given integer to a string.
  *
  * The string must be freed by the caller.
