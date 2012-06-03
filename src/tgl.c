@@ -92,6 +92,76 @@ static string append_cstr(string a, const char* b) {
   result->len += blen;
   return result;
 }
+
+/* Tries to interpret the given string as an integer.
+ *
+ * If successful, *dst is set to the result and 1 is returned. Otherwise, *dst
+ * is unchanged and 0 is returned.
+ */
+static int string_to_int(string s, signed* dst) {
+  int negative = 0;
+  signed result = 0;
+  unsigned i = 0, base = 10, digit;
+  byte* dat = string_data(s);
+  if (!s->len) return 0;
+
+  //Check for leading sign
+  if (dat[i] == '+') {
+    ++i;
+  } else if (dat[i] == '-') {
+    ++i;
+    negative = 1;
+  }
+
+  if (i >= s->len) return 0;
+
+  //Possible leading base
+  if (dat[i] == '0') {
+    ++i;
+    //Handle 0 by itself
+    if (i == s->len) {
+      *dst = 0;
+      return 1;
+    }
+
+    if (dat[i] == 'x' || dat[i] == 'X') {
+      base = 16;
+      ++i;
+      if (i >= s->len) return 0;
+    } else if (dat[i] == 'b' || dat[i] == 'B') {
+      base = 2;
+      ++i;
+      if (i >= s->len) return 0;
+    } else if (dat[i] == 'o' || dat[i] == 'O') {
+      base = 8;
+      ++i;
+      if (i >= s->len) return 0;
+    }
+  }
+
+  //Read the rest of the number
+  for (; i < s->len; ++i) {
+    if (dat[i] >= '0' && dat[i] <= '9')
+      digit = dat[i] - '0';
+    else if (dat[i] >= 'a' && dat[i] <= 'f')
+      digit = dat[i] + 10 - 'a';
+    else if (dat[i] >= 'A' && dat[i] <= 'F')
+      digit = dat[i] + 10 - 'A';
+    else
+      return 0;
+
+    //Ensure digit is valid in this base
+    if (digit >= base)
+      return 0;
+
+    result *= base;
+    result += digit;
+  }
+
+  //Everything was OK
+  *dst = result;
+  return 1;
+}
 /* END: String handling */
 
 int main(int argc, char** argv) {
