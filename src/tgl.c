@@ -755,6 +755,32 @@ static int builtin_substr(interpreter* interp) {
   return 0;
 }
 
+static int builtin_suffix(interpreter* interp) {
+  string str, sfrom, result;
+  signed from;
+
+  if (!stack_pop_strings(interp, 2, &sfrom, &str)) UNDERFLOW;
+  if (!string_to_int(sfrom, &from)) {
+    print_error_s("Bad integer", sfrom);
+    stack_push(interp, str);
+    stack_push(interp, sfrom);
+    return 0;
+  }
+
+  /* Cap the indices instead of generating errors. */
+  if (from < 0) from += str->len;
+  if (from < 0) from = 0;
+  if (from > str->len) from = str->len;
+
+  /* OK */
+  result = create_string(string_data(str)+from,
+                         string_data(str)+str->len);
+  free(str);
+  free(sfrom);
+  stack_push(interp, result);
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -766,6 +792,7 @@ struct builtins_t builtins_[] = {
   { 'l', builtin_length },
   { 'C', builtin_charat },
   { 's', builtin_substr },
+  { 'S', builtin_suffix },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
