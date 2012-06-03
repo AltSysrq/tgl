@@ -612,6 +612,8 @@ static int builtin_char(interpreter* interp) {
   string str;
   char cstr[2];
 
+  ++interp->ip;
+
   if (interp->ip >= interp->code->len) {
     print_error("Expected character");
     return 0;
@@ -628,6 +630,7 @@ struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
   { '.', builtin_print },
+  { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
 
