@@ -98,12 +98,20 @@ static string append_string(string a, string b) {
 /* Appends a cstring onto a, destroying a.
  * Returns a string representing the concatenated strings.
  */
-static string append_cstr(string a, const char* b) {
+static string append_cstr(string a, char* b) {
   unsigned blen = strlen(b);
   string result = trealloc(a, sizeof(struct string)+a->len+blen);
   memcpy(string_data(result) + result->len, b, blen);
   result->len += blen;
   return result;
+}
+
+/* Returns whether the two given strings are equal. */
+static int string_equals(string a, string b) {
+  if (a->len != b->len)
+    return 0;
+
+  return !memcmp(string_data(a), string_data(b), a->len);
 }
 
 /* Tries to interpret the given string as an integer.
@@ -504,6 +512,51 @@ static int exec_code(interpreter* interp, string code) {
   return success;
 }
 /* END: Interpreter operations */
+
+/* BEGIN: Built-in commands */
+static int builtin_long_command(interpreter* interp) {
+  unsigned begin, end;
+  string commandName;
+  long_command* curr;
+  int result;
+
+  /* Extract the long name */
+  begin = ++interp->ip;
+  while (interp->ip < interp->code->len &&
+         !isspace(string_data(interp->code)[interp->ip]))
+    ++interp->ip;
+
+  end = interp->ip;
+  if (begin == end || begin+1 == end) {
+    print_error("Long command name expected");
+    return 0;
+  }
+
+  commandName = create_string(string_data(interp->code)+begin,
+                              string_data(interp->code)+end);
+
+  /* Find the first long command name which matches. */
+  curr = interp->long_commands;
+  while (curr && !string_equals(curr->name, commandName))
+    curr = curr->next;
+
+  /* Don't need the command name anymore. */
+  free(commandName);
+
+  if (!curr) {
+    print_error("Long command not found");
+    return 1;
+  }
+
+  /* Execute, clean up, and return */
+  if (curr->cmd.isNative)
+    result = curr->cmd.cmd.native(interp);
+  else
+    result = exec_code(interp, curr->cmd.cmd.user);
+
+  return result;
+}
+/* END: Built-in commands */
 
 int main(int argc, char** argv) {
   printf("hello world\n");
