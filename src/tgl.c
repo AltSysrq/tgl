@@ -257,6 +257,14 @@ typedef struct interpreter {
   string code;
   /* The current instruction pointer within the code. */
   unsigned ip;
+  /* The name of the current context. */
+  string context;
+  /* Whether the current context is active. */
+  int context_active;
+  /* The whitespace characters that were skipped before the first command was
+   * executed. This is NULL before the first command is executed.
+   */
+  string initial_whitespace;
 } interpreter;
 /* END: Interpreter operations */
 
