@@ -575,7 +575,23 @@ static int builtin_print(interpreter* interp) {
   }
 
   free(str);
-  return 0;
+  return 1;
+}
+
+static int builtin_char(interpreter* interp) {
+  string str;
+  char cstr[2];
+
+  if (interp->ip >= interp->code->len) {
+    print_error("Expected character");
+    return 0;
+  }
+
+  cstr[0] = string_data(interp->code)[interp->ip];
+  cstr[1] = 0;
+  str = convert_string(cstr);
+  stack_push(interp, str);
+  return 1;
 }
 /* END: Built-in commands */
 
