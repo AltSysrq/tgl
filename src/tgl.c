@@ -334,9 +334,64 @@ static int stack_pop_strings(interpreter* interp, unsigned n, ...) {
 
   /* Pop the strings. */
   va_start(args, n);
-  while (n > 0)
+  while (n-- > 0)
     *va_arg(args, string*) = stack_pop(interp);
   va_end(args);
+  return 1;
+}
+
+/* Like stack_pop_strings(), but writes into an array instead of variadic
+ * arguments.
+ */
+static int stack_pop_array(interpreter* interp, unsigned n, string dst[]) {
+  stack_elt* curr;
+  unsigned cnt;
+
+  /* Ensure the stack is big enough */
+  for (cnt = 0, curr = interp->stack; cnt<n && curr; ++cnt, curr = curr->next);
+
+  if (cnt < n)
+    return 0; /* Not big enough */
+
+  /* Pop them */
+  while (n-- > 0)
+    *dst++ = stack_pop(interp);
+
+  return 1;
+}
+
+/* Like stack_pop_strings(), but converts arguments to integers (signed*s).
+ *
+ * This function is not entirely atomic: If popping is successful, but
+ * conversion fails, some of the integers may have been altered. In any case,
+ * either the function is successful or the stack is unchanged.
+ */
+static int stack_pop_ints(interpreter* interp, unsigned n, ...) {
+  string values[n];
+  va_list args;
+  unsigned i;
+
+  if (!stack_pop_array(interp, n, values))
+    return 0;
+
+  /* Try to convert them */
+  va_start(args, n);
+  for (i = 0; i < n; ++i) {
+    if (!string_to_int(values[i], va_arg(args, signed*))) {
+      /* Conversion failed, push the values back onto the stack and return
+       * failure.
+       */
+      for (i = n; i > 0; --i)
+        stack_push(interp, values[i-1]);
+      return 0;
+    }
+  }
+  va_end(args);
+
+  /* Free the strings and return success. */
+  for (i = 0; i < n; ++i)
+    free(values[i]);
+
   return 1;
 }
 /* END: Interpreter operations */
