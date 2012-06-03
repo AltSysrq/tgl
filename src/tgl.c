@@ -271,7 +271,7 @@ typedef struct interpreter {
   /* All short commands, indexed by character. */
   command commands[256];
   /* All registers. Initially initialised to empty strings. */
-  string resigsters[256];
+  string registers[256];
   /* The stack, initially NULL. */
   stack_elt* stack;
   /* The list of long commands, initially NULL. */
@@ -517,6 +517,22 @@ static int exec_code(interpreter* interp, string code) {
 
   return success;
 }
+
+extern struct builtins_t { char name; native_command cmd; } * builtins;
+/* Initialises the given interpreter. */
+static void interp_init(interpreter* interp) {
+  unsigned i;
+
+  memset(interp, 0, sizeof(interpreter));
+  interp->context_active = 1;
+
+  for (i=0; i < 256; ++i)
+    interp->registers[i] = empty_string();
+  for (i=0; builtins[i].name; ++i) {
+    interp->commands[builtins[i].name].isNative = 1;
+    interp->commands[builtins[i].name].cmd.native = builtins[i].cmd;
+  }
+}
 /* END: Interpreter operations */
 
 /* BEGIN: Built-in commands */
@@ -593,6 +609,12 @@ static int builtin_char(interpreter* interp) {
   stack_push(interp, str);
   return 1;
 }
+
+struct builtins_t builtins_[] = {
+  { 'Q', builtin_long_command },
+  { '\'',builtin_char },
+  { '.', builtin_print },
+}, * builtins = builtins_;
 /* END: Built-in commands */
 
 int main(int argc, char** argv) {
