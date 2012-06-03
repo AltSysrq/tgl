@@ -105,7 +105,7 @@ static int string_to_int(string s, signed* dst) {
   byte* dat = string_data(s);
   if (!s->len) return 0;
 
-  //Check for leading sign
+  /* Check for leading sign */
   if (dat[i] == '+') {
     ++i;
   } else if (dat[i] == '-') {
@@ -115,10 +115,10 @@ static int string_to_int(string s, signed* dst) {
 
   if (i >= s->len) return 0;
 
-  //Possible leading base
+  /* Possible leading base */
   if (dat[i] == '0') {
     ++i;
-    //Handle 0 by itself
+    /* Handle 0 by itself */
     if (i == s->len) {
       *dst = 0;
       return 1;
@@ -139,7 +139,7 @@ static int string_to_int(string s, signed* dst) {
     }
   }
 
-  //Read the rest of the number
+  /* Read the rest of the number */
   for (; i < s->len; ++i) {
     if (dat[i] >= '0' && dat[i] <= '9')
       digit = dat[i] - '0';
@@ -150,7 +150,7 @@ static int string_to_int(string s, signed* dst) {
     else
       return 0;
 
-    //Ensure digit is valid in this base
+    /* Ensure digit is valid in this base */
     if (digit >= base)
       return 0;
 
@@ -158,7 +158,7 @@ static int string_to_int(string s, signed* dst) {
     result += digit;
   }
 
-  //Everything was OK
+  /* Everything was OK */
   *dst = result;
   return 1;
 }
@@ -177,8 +177,9 @@ static int string_to_int_free(string s, signed* dst) {
  * The string must be freed by the caller.
  */
 static string int_to_string(signed i) {
-  //Assuming that ever byte is three digits will always be sufficient.
-  //Then add one for sign and one for term NUL
+  /* Assuming that ever byte is three digits will always be sufficient.
+   * Then add one for sign and one for term NUL.
+   */
   static char buffer[2 + sizeof(signed)*3];
   sprintf(buffer, "%d", i);
   return convert_string(buffer);
