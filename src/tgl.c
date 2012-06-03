@@ -432,7 +432,7 @@ static void print_error(char* message) {
  * If the message is omitted, only context is shown.
  */
 static void diagnostic(interpreter* interp, char* message) {
-  char context[33];
+  char context[33], while_exec[] = "While executing: ";
   unsigned offset, len, i;
   /* Give the user up to 32 characters of context. */
   if (interp->ip >= 16)
@@ -452,8 +452,9 @@ static void diagnostic(interpreter* interp, char* message) {
 
   if (message)
     print_error(message);
-  fprintf(stderr, "While executing:\n\t%s\n\t%*s\n",
-          context, interp->ip-offset+1, "^");
+  fprintf(stderr, "%s%s\n%*s\n",
+          while_exec, context,
+          interp->ip - offset + sizeof(while_exec), "^");
 }
 
 static int exec_code(interpreter* interp, string code);
