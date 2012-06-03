@@ -466,10 +466,16 @@ static int exec_code(interpreter* interp, string code);
  * Any whitespace encountered will be skipped. If there is no more code to
  * execute, the IP is not changed further. Otherwise, an instruction is
  * executed and, if successful, the IP is incremented.
+ *
+ * If any error occurs, the IP will be what it was before this function was
+ * called, regardless of what any command may have done, except that whitespace
+ * is still skipped (so the ip points to the instruction that was/would have
+ * been executed).
  */
 static int exec_one_command(interpreter* interp) {
   byte command;
   int success;
+  unsigned old_ip;
   /* Skip whitespace */
   while (interp->ip < interp->code->len &&
          isspace(string_data(interp->code)[interp->ip]))
@@ -478,6 +484,8 @@ static int exec_one_command(interpreter* interp) {
   /* Return success if nothing is left. */
   if (interp->ip >= interp->code->len)
     return 1;
+
+  old_ip = interp->ip;
 
   /* Ensure the command exists */
   command = string_data(interp->code)[interp->ip];
@@ -495,11 +503,13 @@ static int exec_one_command(interpreter* interp) {
   /* Move to next command if successful, then return. */
   if (success)
     ++interp->ip;
-  else
+  else {
+    interp->ip = old_ip;
     /* Show a simple diagnostic; this will create a sort of stack trace in cases
      * of nested code.
      */
     diagnostic(interp, NULL);
+  }
   return success;
 }
 
@@ -509,13 +519,13 @@ static int exec_one_command(interpreter* interp) {
  * they will be restored before the function returns.
  */
 static int exec_code(interpreter* interp, string code) {
-  string oldCode;
-  unsigned oldIP;
+  string old_code;
+  unsigned old_ip;
   int success;
 
   /* Back current values up */
-  oldCode = interp->code;
-  oldIP = interp->ip;
+  old_code = interp->code;
+  old_ip = interp->ip;
 
   /* Set new values for execution */
   interp->code = code;
@@ -526,8 +536,8 @@ static int exec_code(interpreter* interp, string code) {
     success = exec_one_command(interp);
 
   /* Restore old values */
-  interp->code = oldCode;
-  interp->ip = oldIP;
+  interp->code = old_code;
+  interp->ip = old_ip;
 
   return success;
 }
