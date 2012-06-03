@@ -701,6 +701,7 @@ static int builtin_charat(interpreter* interp) {
     return 0;
   }
 
+  if (ix < 0) ix += str->len;
   if (ix < 0 || ix >= str->len) {
     print_error_s("Integer out of range", six);
     stack_push(interp, six);
@@ -731,8 +732,10 @@ static int builtin_substr(interpreter* interp) {
   }
 
   /* Cap the indices instead of generating errors. */
+  if (from < 0) from += str->len;
   if (from < 0) from = 0;
   if (from > str->len) from = str->len;
+  if (to < 0) to += str->len + 1;
   if (to < from) to = from;
   if (to > str->len) to = str->len;
 
