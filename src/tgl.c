@@ -454,7 +454,7 @@ static void diagnostic(interpreter* interp, char* message) {
     print_error(message);
   fprintf(stderr, "%s%s\n%*s\n",
           while_exec, context,
-          interp->ip - offset + sizeof(while_exec), "^");
+          (unsigned)(interp->ip - offset + sizeof(while_exec)), "^");
 }
 
 static int exec_code(interpreter* interp, string code);
@@ -554,8 +554,8 @@ static void interp_init(interpreter* interp) {
   for (i=0; i < 256; ++i)
     interp->registers[i] = empty_string();
   for (i=0; builtins[i].name; ++i) {
-    interp->commands[builtins[i].name].isNative = 1;
-    interp->commands[builtins[i].name].cmd.native = builtins[i].cmd;
+    interp->commands[(unsigned)builtins[i].name].isNative = 1;
+    interp->commands[(unsigned)builtins[i].name].cmd.native = builtins[i].cmd;
   }
 }
 /* END: Interpreter operations */
