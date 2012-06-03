@@ -661,6 +661,17 @@ static int builtin_swap(interpreter* interp) {
   return 1;
 }
 
+static int builtin_concat(interpreter* interp) {
+  string a, b;
+  if (!stack_pop_strings(interp, 2, &b, &a)) UNDERFLOW;
+
+  a = append_string(a, b);
+  free(b);
+
+  stack_push(interp, a);
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -668,6 +679,7 @@ struct builtins_t builtins_[] = {
   { ':', builtin_dupe },
   { ';', builtin_drop },
   { 'x', builtin_swap },
+  { 'c', builtin_concat },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
