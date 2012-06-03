@@ -637,10 +637,20 @@ static int builtin_char(interpreter* interp) {
   return 1;
 }
 
+static int builtin_dupe(interpreter* interp) {
+  string s;
+
+  if (!(s = stack_pop(interp))) UNDERFLOW;
+  stack_push(interp, s);
+  stack_push(interp, dupe_string(s));
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
   { '.', builtin_print },
+  { ':', builtin_dupe },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
