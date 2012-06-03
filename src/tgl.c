@@ -56,6 +56,16 @@ static string convert_string(char* str) {
   return result;
 }
 
+/* Creates a string from a copy of the given memory region. */
+static string create_string(void* begin_, void* end_) {
+  byte* begin = begin_, * end = end_;
+  unsigned len = end-begin;
+  string result = tmalloc(sizeof(struct string) + len);
+  result->len = len;
+  memcpy(string_data(result), begin, len);
+  return result;
+}
+
 /* Duplicates the given TGL string.
  * The string must be free()d by the caller.
  */
