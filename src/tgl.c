@@ -653,12 +653,21 @@ static int builtin_drop(interpreter* interp) {
   return 1;
 }
 
+static int builtin_swap(interpreter* interp) {
+  string a, b;
+  if (!stack_pop_strings(interp, 2, &a, &b)) UNDERFLOW;
+  stack_push(interp, a);
+  stack_push(interp, b);
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
   { '.', builtin_print },
   { ':', builtin_dupe },
   { ';', builtin_drop },
+  { 'x', builtin_swap },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
