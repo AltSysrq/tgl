@@ -48,7 +48,7 @@ static inline byte* string_data(string s) {
 /* Converts a C string to a TGL string.
  * The string must be free()d by the caller.
  */
-static string covert_string(char* str) {
+static string convert_string(char* str) {
   unsigned int len = strlen(str);
   string result = tmalloc(sizeof(struct string) + len);
   result->len = len;
@@ -161,6 +161,18 @@ static int string_to_int(string s, signed* dst) {
   //Everything was OK
   *dst = result;
   return 1;
+}
+
+/* Converts the given integer to a string.
+ *
+ * The string must be freed by the caller.
+ */
+static string int_to_string(signed i) {
+  //Assuming that ever byte is three digits will always be sufficient.
+  //Then add one for sign and one for term NUL
+  static char buffer[2 + sizeof(signed)*3];
+  sprintf(buffer, "%d", i);
+  return convert_string(buffer);
 }
 /* END: String handling */
 
