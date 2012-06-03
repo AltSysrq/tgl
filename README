@@ -205,7 +205,7 @@ Hello world:
 
 99 Bottles of Beer:
   99Rc"bottles"RBrcRC(rc#-1>)(
-  "$C $B of beer on the wall\n$C $B bottles of beer\n".
+  "$C $B of beer on the wall\n$C $B of beer\n".
   rc1-Rc
   rc1=("bottle")("bottles")iRBrc0=("No more")(rc)iRC
   rc#-1=(
