@@ -425,7 +425,14 @@ static int stack_pop_ints(interpreter* interp, unsigned n, ...) {
 
 /* Prints an error message to the user. */
 static void print_error(char* message) {
-  fprintf(stderr, "tgl: Error: %s\n", message);
+  fprintf(stderr, "tgl: error: %s\n", message);
+}
+
+/* Like print_error, but includes the given string. */
+static void print_error_s(char* message, string append) {
+  fprintf(stderr, "tgl: error: %s: ", message);
+  fwrite(string_data(append), 1, append->len, stderr);
+  fprintf(stderr, "\n");
 }
 
 /* Prints a diagnostic to the user, including the given error message.
@@ -672,6 +679,43 @@ static int builtin_concat(interpreter* interp) {
   return 1;
 }
 
+static int builtin_length(interpreter* interp) {
+  string s;
+  if (!(s = stack_pop(interp))) UNDERFLOW;
+
+  stack_push(interp, int_to_string(s->len));
+  free(s);
+
+  return 1;
+}
+
+static int builtin_charat(interpreter* interp) {
+  string str, six;
+  signed ix;
+  if (!stack_pop_strings(interp, 2, &six, &str)) UNDERFLOW;
+
+  if (!string_to_int(six, &ix)) {
+    print_error_s("Bad integer", six);
+    stack_push(interp, six);
+    stack_push(interp, str);
+    return 0;
+  }
+
+  if (ix < 0 || ix >= str->len) {
+    print_error_s("Integer out of range", six);
+    stack_push(interp, six);
+    stack_push(interp, str);
+    return 0;
+  }
+
+  stack_push(interp, create_string(&string_data(str)[ix],
+                                   &string_data(str)[ix+1]));
+
+  free(str);
+  free(six);
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -680,6 +724,8 @@ struct builtins_t builtins_[] = {
   { ';', builtin_drop },
   { 'x', builtin_swap },
   { 'c', builtin_concat },
+  { 'l', builtin_length },
+  { 'C', builtin_charat },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
