@@ -215,7 +215,7 @@ Hello world:
   )i.)w
 
 Quickly generate case statements for each digit:
-  9("`case '$i':\n".)F
+  10("`case '$i':\n".)F
 
 Save the previous to a language-specific macro:
   "nc"hzVe
