@@ -394,6 +394,115 @@ static int stack_pop_ints(interpreter* interp, unsigned n, ...) {
 
   return 1;
 }
+
+/* Prints an error message to the user. */
+static void print_error(char* message) {
+  fprintf(stderr, "tgl: Error: %s\n", message);
+}
+
+/* Prints a diagnostic to the user, including the given error message.
+ * If the message is omitted, only context is shown.
+ */
+static void diagnostic(interpreter* interp, char* message) {
+  char context[33];
+  unsigned offset, len, i;
+  /* Give the user up to 32 characters of context. */
+  if (interp->ip >= 16)
+    offset = interp->ip - 16;
+  else
+    offset = 0;
+  if (offset + 32 < interp->code->len)
+    len = 32;
+  else
+    len = interp->code->len - offset;
+  memcpy(context, string_data(interp->code)+offset, len);
+  context[len] = 0;
+  /* Make sure all WS characters are spaces. */
+  for (i = 0; i < len; ++i)
+    if (isspace(context[i]))
+      context[i] = ' ';
+
+  if (message)
+    print_error(message);
+  fprintf(stderr, "While executing:\n\t%s\n\t%*s\n",
+          context, interp->ip-offset+1, "^");
+}
+
+static int exec_code(interpreter* interp, string code);
+
+/* Executes a single instruction within the given interpreter.
+ *
+ * Returns 1 if successful or if the IP is past the end of the code, or 0 for
+ * any kind of failure.
+ *
+ * Any whitespace encountered will be skipped. If there is no more code to
+ * execute, the IP is not changed further. Otherwise, an instruction is
+ * executed and, if successful, the IP is incremented.
+ */
+static int exec_one_command(interpreter* interp) {
+  byte command;
+  int success;
+  /* Skip whitespace */
+  while (interp->ip < interp->code->len &&
+         isspace(string_data(interp->code)[interp->ip]))
+    ++interp->ip;
+
+  /* Return success if nothing is left. */
+  if (interp->ip >= interp->code->len)
+    return 1;
+
+  /* Ensure the command exists */
+  command = string_data(interp->code)[interp->ip];
+  if (!interp->commands[command].cmd.native) {
+    diagnostic(interp, "No such command");
+    return 0;
+  }
+
+  /* Execute the command. */
+  if (interp->commands[command].isNative)
+    success = interp->commands[command].cmd.native(interp);
+  else
+    success = exec_code(interp, interp->commands[command].cmd.user);
+
+  /* Move to next command if successful, then return. */
+  if (success)
+    ++interp->ip;
+  else
+    /* Show a simple diagnostic; this will create a sort of stack trace in cases
+     * of nested code.
+     */
+    diagnostic(interp, NULL);
+  return success;
+}
+
+/* Executes the given code in the given interpreter.
+ *
+ * This will temprorarily alter the code and ip fields of the interpreter, but
+ * they will be restored before the function returns.
+ */
+static int exec_code(interpreter* interp, string code) {
+  string oldCode;
+  unsigned oldIP;
+  int success;
+
+  /* Back current values up */
+  oldCode = interp->code;
+  oldIP = interp->ip;
+
+  /* Set new values for execution */
+  interp->code = code;
+  interp->ip = 0;
+  success = 1;
+  /* Execute to completion or failure. */
+  while (interp->ip < interp->code->len && success)
+    success = exec_one_command(interp);
+
+  /* Restore old values */
+  interp->code = oldCode;
+  interp->ip = oldIP;
+
+  return success;
+}
 /* END: Interpreter operations */
 
 int main(int argc, char** argv) {
