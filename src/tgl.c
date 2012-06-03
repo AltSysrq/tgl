@@ -13,6 +13,8 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
+#define EXIT_PROGRAM_ERROR 1
+#define EXIT_IO_ERROR 254
 #define EXIT_OUT_OF_MEMORY 255
 
 /* Versions of malloc and realloc that abort on memory exhaustion. */
@@ -103,6 +105,18 @@ static string append_cstr(string a, char* b) {
   unsigned blen = strlen(b);
   string result = trealloc(a, sizeof(struct string)+a->len+blen);
   memcpy(string_data(result) + result->len, b, blen);
+  result->len += blen;
+  return result;
+}
+
+/* Appends a block of data onto a, destroying it.
+ * Returns a string representing the concatenated strings.
+ */
+static string append_data(string a, void* begin_, void* end_) {
+  byte* begin = begin_, * end = end_;
+  unsigned blen = end-begin;
+  string result = trealloc(a, sizeof(struct string) + a->len + blen);
+  memcpy(string_data(result) + result->len, begin, blen);
   result->len += blen;
   return result;
 }
@@ -617,7 +631,37 @@ struct builtins_t builtins_[] = {
 }, * builtins = builtins_;
 /* END: Built-in commands */
 
+/* Reads all text from the given file, then executes it.
+ *
+ * Returns an exit code.
+ */
+int exec_file(interpreter* interp, FILE* file) {
+  string input;
+  char buffer[1024];
+  unsigned len;
+  int status = 0;
+
+  input = empty_string();
+  while (!feof(file) && !ferror(file)) {
+    len = fread(buffer, 1, sizeof(buffer), file);
+    input = append_data(input, buffer, buffer+len);
+  }
+
+  if (ferror(file)) {
+    perror("fread");
+    free(input);
+    return EXIT_IO_ERROR;
+  }
+
+  if (!exec_code(interp, input))
+    status = EXIT_PROGRAM_ERROR;
+
+  free(input);
+  return status;
+}
+
 int main(int argc, char** argv) {
-  printf("hello world\n");
-  return 0;
+  interpreter interp;
+  interp_init(&interp);
+  return exec_file(&interp, stdin);
 }
