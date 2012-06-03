@@ -716,6 +716,42 @@ static int builtin_charat(interpreter* interp) {
   return 1;
 }
 
+static int builtin_substr(interpreter* interp) {
+  string str, sfrom, sto, result;
+  signed from, to;
+
+  if (!stack_pop_strings(interp, 3, &sto, &sfrom, &str)) UNDERFLOW;
+  if (!string_to_int(sfrom, &from)) {
+    print_error_s("Bad integer", sfrom);
+    goto error;
+  }
+  if (!string_to_int(sto, &to)) {
+    print_error_s("Bad integer", sto);
+    goto error;
+  }
+
+  /* Cap the indices instead of generating errors. */
+  if (from < 0) from = 0;
+  if (from > str->len) from = str->len;
+  if (to < from) to = from;
+  if (to > str->len) to = str->len;
+
+  /* OK */
+  result = create_string(string_data(str)+from,
+                         string_data(str)+to);
+  free(str);
+  free(sfrom);
+  free(sto);
+  stack_push(interp, result);
+  return 1;
+
+  error:
+  stack_push(interp, str);
+  stack_push(interp, sfrom);
+  stack_push(interp, sto);
+  return 0;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -726,6 +762,7 @@ struct builtins_t builtins_[] = {
   { 'c', builtin_concat },
   { 'l', builtin_length },
   { 'C', builtin_charat },
+  { 's', builtin_substr },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
