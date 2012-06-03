@@ -6,6 +6,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -302,6 +303,11 @@ static void stack_push(interpreter* interp, string val) {
   interp->stack = s;
 }
 
+/* Macro for the common case of printing a stack underflow error and returning
+ * failure.
+ */
+#define UNDERFLOW do { print_error("Stack underflow"); return 0; } while(0)
+
 /* Pops an item of the stack of the interpreter and returns it.
  *
  * Returns NULL if the stack is empty.
@@ -555,6 +561,21 @@ static int builtin_long_command(interpreter* interp) {
     result = exec_code(interp, curr->cmd.cmd.user);
 
   return result;
+}
+
+static int builtin_print(interpreter* interp) {
+  string str;
+
+  if (!(str = stack_pop(interp))) UNDERFLOW;
+
+  if (1 != fwrite(string_data(str), str->len, 1, stdout)) {
+    free(str);
+    print_error(strerror(errno));
+    return 0;
+  }
+
+  free(str);
+  return 0;
 }
 /* END: Built-in commands */
 
