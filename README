@@ -221,7 +221,7 @@ Save the previous to a language-specific macro:
   "nc"hzVe
 
 Resusing the new macro:
-  _nc
+  Qnc
 
 Creating a macro to place strings into C-strings (quoting and escaping):
   @=.h @|.c
