@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
+#include <stdarg.h>
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -276,6 +279,65 @@ typedef struct interpreter {
    */
   string initial_whitespace;
 } interpreter;
+
+/* Pushes the given string onto the stack of the given interpreter.
+ *
+ * After this call, the caller must not free the string, as its presence on the
+ * stack means it will be freed by someone else. Because of this, the same
+ * string object cannot be pushed onto the stack more than once.
+ */
+static void stack_push(interpreter* interp, string val) {
+  stack_elt* s = tmalloc(sizeof(stack_elt));
+  s->value = val;
+  s->next = interp->stack;
+  interp->stack = s;
+}
+
+/* Pops an item of the stack of the interpreter and returns it.
+ *
+ * Returns NULL if the stack is empty.
+ *
+ * It is up to the caller to ensure the string is freed.
+ */
+static string stack_pop(interpreter* interp) {
+  stack_elt* next;
+  string result = NULL;
+  if (interp->stack) {
+    next = interp->stack->next;
+    result = interp->stack->value;
+    free(interp->stack);
+    interp->stack = next;
+  }
+  return result;
+}
+
+/* Pops n strings from the stack as an atomic operation.
+ *
+ * Following the argument n should be n string*s, which will be set to the
+ * popped strings if successful, and unchanged otherwise. The strings are
+ * popped from left to right, which means they will be in the opposite order as
+ * they were pushed (that is, the element pushed visually on the leftmost will
+ * be extracted into the rightmost string).
+ *
+ * Returns 1 if successful, 0 otherwise.
+ */
+static int stack_pop_strings(interpreter* interp, unsigned n, ...) {
+  va_list args;
+  stack_elt* curr;
+  unsigned cnt;
+  /* Ensure the stack is big enough */
+  for (cnt = 0, curr = interp->stack; cnt<n && curr; ++cnt, curr = curr->next);
+
+  if (cnt < n)
+    return 0; /* Not big enough */
+
+  /* Pop the strings. */
+  va_start(args, n);
+  while (n > 0)
+    *va_arg(args, string*) = stack_pop(interp);
+  va_end(args);
+  return 1;
+}
 /* END: Interpreter operations */
 
 int main(int argc, char** argv) {
