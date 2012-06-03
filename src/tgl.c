@@ -599,7 +599,7 @@ static int builtin_long_command(interpreter* interp) {
 
   if (!curr) {
     print_error("Long command not found");
-    return 1;
+    return 0;
   }
 
   /* Execute, clean up, and return */
