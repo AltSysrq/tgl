@@ -781,6 +781,115 @@ static int builtin_suffix(interpreter* interp) {
   return 1;
 }
 
+static int builtin_map(interpreter* interp) {
+  string str, *mapping, sn, result;
+  signed n;
+  unsigned i, j, k, bufferSize, bufferIx;
+  byte* buffer;
+
+  if (!(sn = stack_pop(interp))) UNDERFLOW;
+  if (!string_to_int(sn, &n)) {
+    print_error_s("Bad integer", sn);
+    stack_push(interp, sn);
+    return 0;
+  }
+
+  if (n < 0 || n >= 65536) {
+    print_error_s("Invalid mapping size", sn);
+    stack_push(interp, sn);
+    return 0;
+  }
+
+  mapping = tmalloc(sizeof(string) * n * 2);
+  if (!stack_pop_array(interp, n*2, mapping)) {
+    free(mapping);
+    stack_push(interp, sn);
+    UNDERFLOW;
+  }
+
+  if (!(str = stack_pop(interp))) {
+    for (i = n*2; i > 0; --i)
+      stack_push(interp, mapping[i-1]);
+    free(mapping);
+    stack_push(interp, sn);
+    UNDERFLOW;
+  }
+
+  /* Now that we have all the parms, determine the buffer size for building the
+   * result.
+   *
+   * The buffer size must be at least twice the size of the longest
+   * substitution, but use 1024 if nothing requires that.
+   */
+  bufferSize = 1024;
+  for (i = n*2; i > 0; i -= 2)
+    if (2 * mapping[i-2]->len > bufferSize)
+      bufferSize = 2 * mapping[i-2]->len;
+  buffer = malloc(bufferSize);
+
+  /* For each character in the input string, see if it matches any mapping
+   * source. If it does, see if the whole source matches. If it does, copy the
+   * mapping destination into the buffer; otherwise, keep looking. If no
+   * mapping matches, copy that character into the buffer. In either case,
+   * advance the index past the character(s) that were copied. When the buffer
+   * usage exceeds half the buffer size, append the buffer to the result and
+   * clear the buffer.
+   */
+  bufferIx = 0;
+  i = 0;
+  result = empty_string();
+  while (i < str->len) {
+    for (j = n*2; j > 0; --j) {
+      /* Silently ignore mappings with an empty string source */
+      if (!mapping[j-1]->len) continue;
+      if (string_data(str)[i] == string_data(mapping[j-1])[0]) {
+        /* Does the rest match? */
+        if (str->len - i < mapping[j-1]->len)
+          /* Source is longer than remaining input */
+          continue;
+
+        for (k = 1; k < mapping[j-1]->len; ++k)
+          if (string_data(str)[i+k]  != string_data(mapping[j-1])[k])
+            goto source_not_match;
+
+        /* If we get here, the two match. Substitute with the destination and
+         * advance the length of the source.
+         */
+        memcpy(buffer+bufferIx, string_data(mapping[j-2]), mapping[j-2]->len);
+        bufferIx += mapping[j-2]->len;
+        i += mapping[j-1]->len;
+        goto appended_to_buffer;
+      }
+
+      source_not_match:;
+    }
+
+    /* If we get here, no source matched, so just copy the input character. */
+    buffer[bufferIx++] = string_data(str)[i++];
+
+    appended_to_buffer:
+    /* If the buffer is half-full or more, move to result. */
+    if (bufferIx >= bufferSize/2) {
+      result = append_data(result, buffer, buffer+bufferIx);
+      bufferIx = 0;
+    }
+  }
+
+  /* Copy any remaining buffer to the result. */
+  result = append_data(result, buffer, buffer+bufferIx);
+
+  /* Clean up and return result. */
+  for (i = 0; i < n*2; ++i)
+    free(mapping[i]);
+  free(sn);
+  free(str);
+  free(buffer);
+  free(mapping);
+
+  stack_push(interp, result);
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -793,6 +902,7 @@ struct builtins_t builtins_[] = {
   { 'C', builtin_charat },
   { 's', builtin_substr },
   { 'S', builtin_suffix },
+  { 'm', builtin_map },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
