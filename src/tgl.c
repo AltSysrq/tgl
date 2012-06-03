@@ -172,6 +172,7 @@ static int string_to_int(string s, signed* dst) {
   }
 
   /* Everything was OK */
+  if (negative) result = -result;
   *dst = result;
   return 1;
 }
