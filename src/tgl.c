@@ -1224,6 +1224,52 @@ static int builtin_ifs(interpreter* interp) {
   return result;
 }
 
+static int builtin_while(interpreter* interp) {
+  string condition, body, s;
+  int result;
+
+  if (!stack_pop_strings(interp, 2, &body, &condition)) UNDERFLOW;
+
+  while (1) {
+    result = exec_code(interp, condition);
+    if (!result) break;
+    if (!(s = stack_pop(interp))) {
+      print_error("Stack underflow after evaluating condition");
+      result = 0;
+      break;
+    }
+    if (!string_to_bool_free(s)) break;
+
+    result = exec_code(interp, body);
+    if (!result) break;
+  }
+
+  free(condition);
+  free(body);
+  return result;
+}
+
+static int builtin_whiles(interpreter* interp) {
+  string body, s;
+  int result;
+
+  if (!(body = stack_pop(interp))) UNDERFLOW;
+
+  do {
+    result = exec_code(interp, body);
+    if (!result) break;
+    if (!(s = stack_pop(interp))) {
+      print_error("Stack underflow after evaluating body");
+      result = 0;
+      break;
+    }
+    if (!string_to_bool_free(s)) break;
+  } while (1);
+
+  free(body);
+  return result;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1266,6 +1312,8 @@ struct builtins_t builtins_[] = {
   { '(', builtin_code },
   { 'i', builtin_if },
   { 'I', builtin_ifs },
+  { 'w', builtin_while },
+  { 'W', builtin_whiles },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
