@@ -1468,6 +1468,29 @@ static int builtin_eval(interpreter* interp) {
   return exec_code(interp, code);
 }
 
+static int builtin_stash(interpreter* interp) {
+  unsigned i;
+
+  for (i = 0; i < 256; ++i)
+    stack_push(interp, dupe_string(interp->registers[i]));
+
+  return 1;
+}
+
+static int builtin_retrieve(interpreter* interp) {
+  unsigned i;
+  string s;
+
+  for (i = 256; i > 0; --i) {
+    if (!(s = stack_pop(interp))) UNDERFLOW;
+
+    free(interp->registers[i-1]);
+    interp->registers[i-1] = s;
+  }
+
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1519,6 +1542,8 @@ struct builtins_t builtins_[] = {
   { 'r', builtin_read },
   { 'R', builtin_write },
   { 'X', builtin_eval },
+  { 'p', builtin_stash },
+  { 'P', builtin_retrieve },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
