@@ -1193,6 +1193,37 @@ static int builtin_code(interpreter* interp) {
   return 1;
 }
 
+static int builtin_if(interpreter* interp) {
+  string condition, then, otherwise;
+  int result;
+
+  if (!stack_pop_strings(interp, 3, &otherwise, &then, &condition)) UNDERFLOW;
+
+  if (string_to_bool_free(condition))
+    result = exec_code(interp, then);
+  else
+    result = exec_code(interp, otherwise);
+
+  free(then);
+  free(otherwise);
+  return result;
+}
+
+static int builtin_ifs(interpreter* interp) {
+  string condition, then;
+  int result;
+
+  if (!stack_pop_strings(interp, 2, &then, &condition)) UNDERFLOW;
+
+  if (string_to_bool_free(condition))
+    result = exec_code(interp, then);
+  else
+    result = 1;
+
+  free(then);
+  return result;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1233,6 +1264,8 @@ struct builtins_t builtins_[] = {
   { '^', builtin_xor },
   { '~', builtin_not },
   { '(', builtin_code },
+  { 'i', builtin_if },
+  { 'I', builtin_ifs },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
