@@ -423,6 +423,19 @@ static int stack_pop_ints(interpreter* interp, unsigned n, ...) {
   return 1;
 }
 
+/* Returns the character at the current code point in the given interpreter.
+ *
+ * Assumes that the IP is valid.
+ */
+static inline byte curr(interpreter* interp) {
+  return string_data(interp->code)[interp->ip];
+}
+
+/* Returns whether the IP of the given interpreter is valid. */
+static inline int is_ip_valid(interpreter* interp) {
+  return interp->ip < interp->code->len;
+}
+
 /* Prints an error message to the user. */
 static void print_error(char* message) {
   fprintf(stderr, "tgl: error: %s\n", message);
@@ -890,6 +903,103 @@ static int builtin_map(interpreter* interp) {
   return 1;
 }
 
+static int builtin_number(interpreter* interp) {
+  unsigned begin;
+  int has_digits = 0;
+
+  /* Possible leading # which must be removed. */
+  if (curr(interp) == '#') ++interp->ip;
+
+  begin = interp->ip;
+
+  /* Advance until no more integer-like characters can be read. */
+  if (!is_ip_valid(interp)) goto end;
+  /* Initial sign */
+  if (curr(interp) == '+' || curr(interp) == '-')
+    ++interp->ip;
+  if (!is_ip_valid(interp)) goto end;
+
+  /* If we hit a zero, we must check to see whether a base indicator follows. */
+  if (curr(interp) == '0') {
+    ++interp->ip;
+    if (!is_ip_valid(interp)) {
+      /* Isolated 0 */
+      has_digits = 1;
+      goto end;
+    }
+
+    if (curr(interp) == 'x' ||
+        curr(interp) == 'X') {
+      ++interp->ip;
+      goto hex;
+    }
+
+    if (curr(interp) == 'b' ||
+        curr(interp) == 'B') {
+      ++interp->ip;
+      goto bin;
+    }
+
+    if (curr(interp) == 'o' ||
+        curr(interp) == 'O') {
+      ++interp->ip;
+      goto oct;
+    }
+
+    /* Valid leading zero, handle the rest of the number as decimal. */
+    has_digits = 1;
+  }
+
+  /* Decimal */
+  while (is_ip_valid(interp) &&
+         (curr(interp) >= '0' && curr(interp) <= '9')) {
+    ++interp->ip;
+    has_digits = 1;
+  }
+  goto end;
+
+  hex:
+  while (is_ip_valid(interp) &&
+         ((curr(interp) >= '0' && curr(interp) <= '9') ||
+          (curr(interp) >= 'a' && curr(interp) <= 'f') ||
+          (curr(interp) >= 'A' && curr(interp) <= 'F'))) {
+    ++interp->ip;
+    has_digits = 1;
+  }
+  goto end;
+
+  oct:
+  while (is_ip_valid(interp) &&
+         (curr(interp) >= '0' && curr(interp) <= '7')) {
+    ++interp->ip;
+    has_digits = 1;
+  }
+  goto end;
+
+  bin:
+  while (is_ip_valid(interp) &&
+         (curr(interp) >= '0' && curr(interp) <= '1')) {
+    ++interp->ip;
+    has_digits = 1;
+  }
+  goto end;
+
+  end:
+  if (!has_digits) {
+    print_error("Integer literal expected");
+    return 0;
+  }
+
+  /* OK */
+  stack_push(interp, create_string(string_data(interp->code)+begin,
+                                   string_data(interp->code)+interp->ip));
+  /* Move back one space if we terminated due to landing on a non-digit
+   * character */
+  if (is_ip_valid(interp))
+    --interp->ip;
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -903,6 +1013,17 @@ struct builtins_t builtins_[] = {
   { 's', builtin_substr },
   { 'S', builtin_suffix },
   { 'm', builtin_map },
+  { '0', builtin_number },
+  { '1', builtin_number },
+  { '2', builtin_number },
+  { '3', builtin_number },
+  { '4', builtin_number },
+  { '5', builtin_number },
+  { '6', builtin_number },
+  { '7', builtin_number },
+  { '8', builtin_number },
+  { '9', builtin_number },
+  { '#', builtin_number },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
