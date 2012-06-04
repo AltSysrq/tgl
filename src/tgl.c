@@ -1054,6 +1054,26 @@ static int builtin_mod(interpreter* interp) {
   return 1;
 }
 
+static int builtin_equal(interpreter* interp) {
+  string a, b;
+  if (!stack_pop_strings(interp, 2, &a, &b)) UNDERFLOW;
+
+  stack_push(interp, int_to_string(string_equals(a, b)));
+  free(a);
+  free(b);
+  return 1;
+}
+
+static int builtin_notequal(interpreter* interp) {
+  string a, b;
+  if (!stack_pop_strings(interp, 2, &a, &b)) UNDERFLOW;
+
+  stack_push(interp, int_to_string(!string_equals(a, b)));
+  free(a);
+  free(b);
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1083,6 +1103,8 @@ struct builtins_t builtins_[] = {
   { '*', builtin_mul },
   { '/', builtin_div },
   { '%', builtin_mod },
+  { '=', builtin_equal },
+  { '!', builtin_notequal },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
