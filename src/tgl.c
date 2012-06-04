@@ -209,6 +209,22 @@ static int string_to_int_free(string s, signed* dst) {
   return success;
 }
 
+/* Converts the given string to a boolean value. */
+static int string_to_bool(string s) {
+  signed a;
+  if (string_to_int(s, &a))
+    return a != 0;
+  else
+    return s->len > 0;
+}
+
+/* Like string_to_bool(), but frees the string as well. */
+static int string_to_bool_free(string s) {
+  int result = string_to_bool(s);
+  free(s);
+  return result;
+}
+
 /* Converts the given integer to a string.
  *
  * The string must be freed by the caller.
@@ -1120,6 +1136,43 @@ static int builtin_stringgreater(interpreter* interp) {
   return 1;
 }
 
+static int builtin_and(interpreter* interp) {
+  string a, b;
+  if (!stack_pop_strings(interp, 2, &b, &a)) UNDERFLOW;
+
+  /* Need to use non-short-circuiting operator so that the strings get freed. */
+  stack_push(interp, int_to_string(string_to_bool_free(a) &
+                                   string_to_bool_free(b)));
+  return 1;
+}
+
+static int builtin_or(interpreter* interp) {
+  string a, b;
+  if (!stack_pop_strings(interp, 2, &b, &a)) UNDERFLOW;
+
+  /* Use non-short-circuiting operator to free both strings. */
+  stack_push(interp, int_to_string(string_to_bool_free(a) |
+                                   string_to_bool_free(b)));
+  return 1;
+}
+
+static int builtin_xor(interpreter* interp) {
+  string a, b;
+  if (!stack_pop_strings(interp, 2, &b, &a)) UNDERFLOW;
+
+  stack_push(interp, int_to_string(string_to_bool_free(a) ^
+                                   string_to_bool_free(b)));
+  return 1;
+}
+
+static int builtin_not(interpreter* interp) {
+  string a;
+  if (!(a = stack_pop(interp))) UNDERFLOW;
+
+  stack_push(interp, int_to_string(!string_to_bool_free(a)));
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1155,6 +1208,10 @@ struct builtins_t builtins_[] = {
   { '>', builtin_greater },
   { '{', builtin_stringless },
   { '}', builtin_stringgreater },
+  { '&', builtin_and },
+  { '|', builtin_or },
+  { '^', builtin_xor },
+  { '~', builtin_not },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
