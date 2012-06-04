@@ -1433,6 +1433,33 @@ static int builtin_contextualdefun(interpreter* interp) {
   }
 }
 
+static int builtin_read(interpreter* interp) {
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Register name expected");
+    return 0;
+  }
+
+  stack_push(interp, dupe_string(interp->registers[curr(interp)]));
+  return 1;
+}
+
+static int builtin_write(interpreter* interp) {
+  string val;
+
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Register name expected");
+    return 0;
+  }
+
+  if (!(val = stack_pop(interp))) UNDERFLOW;
+
+  free(interp->registers[curr(interp)]);
+  interp->registers[curr(interp)] = dupe_string(val);
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1481,6 +1508,8 @@ struct builtins_t builtins_[] = {
   { 'F', builtin_fors },
   { 'd', builtin_defun },
   { 'D', builtin_contextualdefun },
+  { 'r', builtin_read },
+  { 'R', builtin_write },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
