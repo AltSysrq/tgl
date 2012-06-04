@@ -1074,6 +1074,22 @@ static int builtin_notequal(interpreter* interp) {
   return 1;
 }
 
+static int builtin_less(interpreter* interp) {
+  signed a, b;
+  if (!stack_pop_ints(interp, 2, &b, &a)) return 0;
+
+  stack_push(interp, int_to_string(a < b));
+  return 1;
+}
+
+static int builtin_greater(interpreter* interp) {
+  signed a, b;
+  if (!stack_pop_ints(interp, 2, &b, &a)) return 0;
+
+  stack_push(interp, int_to_string(a > b));
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1105,6 +1121,8 @@ struct builtins_t builtins_[] = {
   { '%', builtin_mod },
   { '=', builtin_equal },
   { '!', builtin_notequal },
+  { '<', builtin_less },
+  { '>', builtin_greater },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
