@@ -271,7 +271,7 @@ typedef int (*native_command)(struct interpreter*);
 /* Defines any type of command, either native or user-defined. */
 typedef struct command {
   /* Whether the command is native. 1=native, 0=user. */
-  int isNative;
+  int is_native;
   /* Pointer to either a native_command to call or a string to interpret.
    * A non-existent command is indicated by the pointers below being NULL.
    */
@@ -539,7 +539,7 @@ static int exec_one_command(interpreter* interp) {
   }
 
   /* Execute the command. */
-  if (interp->commands[command].isNative)
+  if (interp->commands[command].is_native)
     success = interp->commands[command].cmd.native(interp);
   else
     success = exec_code(interp, interp->commands[command].cmd.user);
@@ -597,7 +597,7 @@ static void interp_init(interpreter* interp) {
   for (i=0; i < 256; ++i)
     interp->registers[i] = empty_string();
   for (i=0; builtins[i].name; ++i) {
-    interp->commands[(unsigned)builtins[i].name].isNative = 1;
+    interp->commands[(unsigned)builtins[i].name].is_native = 1;
     interp->commands[(unsigned)builtins[i].name].cmd.native = builtins[i].cmd;
   }
 }
@@ -639,7 +639,7 @@ static int builtin_long_command(interpreter* interp) {
   }
 
   /* Execute, clean up, and return */
-  if (curr->cmd.isNative)
+  if (curr->cmd.is_native)
     result = curr->cmd.cmd.native(interp);
   else
     result = exec_code(interp, curr->cmd.cmd.user);
@@ -1364,6 +1364,75 @@ static int builtin_fors(interpreter* interp) {
   return result;
 }
 
+static int builtin_defun(interpreter* interp) {
+  string name, body;
+  byte n1;
+  long_command* curr;
+
+  if (!stack_pop_strings(interp, 2, &body, &name)) UNDERFLOW;
+
+  /* If name is one character, it is a short name; if it is more than one
+   * character, it is a long name. An empty string is an error.
+   */
+  if (!name->len) {
+    print_error("Empty command name");
+    goto error;
+  }
+
+  if (name->len == 1) {
+    n1 = string_data(name)[0];
+    /* Both pointers are in the same spot, so check either */
+    if (interp->commands[n1].cmd.native) {
+      print_error_s("Short command already exists", name);
+      goto error;
+    } else {
+      /* OK */
+      interp->commands[n1].is_native = 0;
+      interp->commands[n1].cmd.user = body;
+      free(name);
+    }
+  } else {
+    /* Long command name.
+     * First, check to see if it already exists.
+     */
+    for (curr = interp->long_commands; curr; curr = curr->next) {
+      if (string_equals(name, curr->name)) {
+        print_error_s("Long command already exists", name);
+        goto error;
+      }
+    }
+
+    /* OK, add it */
+    curr = tmalloc(sizeof(long_command));
+    curr->name = name;
+    curr->cmd.is_native = 0;
+    curr->cmd.cmd.user = body;
+    curr->next = interp->long_commands;
+    interp->long_commands = curr;
+  }
+
+  return 1;
+
+  error:
+  /* Restore the stack and return failure */
+  stack_push(interp, name);
+  stack_push(interp, body);
+  return 0;
+}
+
+static int builtin_contextualdefun(interpreter* interp) {
+  string a, b;
+  if (interp->context_active)
+    return builtin_defun(interp);
+  else {
+    /* Pop unused strings */
+    if (!stack_pop_strings(interp, 2, &a, &b)) UNDERFLOW;
+    free(a);
+    free(b);
+    return 1;
+  }
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1410,6 +1479,8 @@ struct builtins_t builtins_[] = {
   { 'W', builtin_whiles },
   { 'f', builtin_for },
   { 'F', builtin_fors },
+  { 'd', builtin_defun },
+  { 'D', builtin_contextualdefun },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
