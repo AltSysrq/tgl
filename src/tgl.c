@@ -1090,6 +1090,36 @@ static int builtin_greater(interpreter* interp) {
   return 1;
 }
 
+static int builtin_stringless(interpreter* interp) {
+  string a, b;
+  int result;
+  if (!stack_pop_strings(interp, 2, &b, &a)) UNDERFLOW;
+
+  result = memcmp(string_data(a), string_data(b),
+                  a->len < b->len? a->len : b->len);
+  /* If a tie, compare lengths. */
+  if (result == 0)
+    result = (a->len < b->len? -1 : a->len > b->len? +1 : 0);
+
+  stack_push(interp, int_to_string(result < 0));
+  return 1;
+}
+
+static int builtin_stringgreater(interpreter* interp) {
+  string a, b;
+  int result;
+  if (!stack_pop_strings(interp, 2, &b, &a)) UNDERFLOW;
+
+  result = memcmp(string_data(a), string_data(b),
+                  a->len < b->len? a->len : b->len);
+  /* If a tie, compare lengths. */
+  if (result == 0)
+    result = (a->len < b->len? -1 : a->len > b->len? +1 : 0);
+
+  stack_push(interp, int_to_string(result > 0));
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1123,6 +1153,8 @@ struct builtins_t builtins_[] = {
   { '!', builtin_notequal },
   { '<', builtin_less },
   { '>', builtin_greater },
+  { '{', builtin_stringless },
+  { '}', builtin_stringgreater },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
