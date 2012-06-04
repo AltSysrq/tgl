@@ -1460,6 +1460,14 @@ static int builtin_write(interpreter* interp) {
   return 1;
 }
 
+static int builtin_eval(interpreter* interp) {
+  string code;
+
+  if (!(code = stack_pop(interp))) UNDERFLOW;
+
+  return exec_code(interp, code);
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1510,6 +1518,7 @@ struct builtins_t builtins_[] = {
   { 'D', builtin_contextualdefun },
   { 'r', builtin_read },
   { 'R', builtin_write },
+  { 'X', builtin_eval },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
