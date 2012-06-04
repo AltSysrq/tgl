@@ -1173,6 +1173,26 @@ static int builtin_not(interpreter* interp) {
   return 1;
 }
 
+static int builtin_code(interpreter* interp) {
+  unsigned depth = 1, begin = ++interp->ip;
+
+  while (is_ip_valid(interp) && depth) {
+    if (curr(interp) == '(') ++depth;
+    if (curr(interp) == ')') --depth;
+    if (depth) ++interp->ip;
+  }
+
+  /* If depth is not zero, we hit EOI. */
+  if (depth) {
+    print_error("Unbalanced parenthesis");
+    return 0;
+  }
+
+  stack_push(interp, create_string(string_data(interp->code)+begin,
+                                   string_data(interp->code)+interp->ip));
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1212,6 +1232,7 @@ struct builtins_t builtins_[] = {
   { '|', builtin_or },
   { '^', builtin_xor },
   { '~', builtin_not },
+  { '(', builtin_code },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
