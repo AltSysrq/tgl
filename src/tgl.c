@@ -224,6 +224,8 @@ static string int_to_string(signed i) {
 /* END: String handling */
 
 /* BEGIN: Interpreter operations */
+static void print_error(char*);
+static void print_error_s(char*, string);
 
 /* Represents a single stack element. */
 typedef struct stack_elt {
@@ -393,6 +395,9 @@ static int stack_pop_array(interpreter* interp, unsigned n, string dst[]) {
  * This function is not entirely atomic: If popping is successful, but
  * conversion fails, some of the integers may have been altered. In any case,
  * either the function is successful or the stack is unchanged.
+ *
+ * This function will produce it's own error messages on failure, since it
+ * cannot indicate specifics to the caller.
  */
 static int stack_pop_ints(interpreter* interp, unsigned n, ...) {
   string values[n];
@@ -400,7 +405,7 @@ static int stack_pop_ints(interpreter* interp, unsigned n, ...) {
   unsigned i;
 
   if (!stack_pop_array(interp, n, values))
-    return 0;
+    UNDERFLOW;
 
   /* Try to convert them */
   va_start(args, n);
@@ -409,8 +414,10 @@ static int stack_pop_ints(interpreter* interp, unsigned n, ...) {
       /* Conversion failed, push the values back onto the stack and return
        * failure.
        */
+      print_error_s("Bad integer", values[i]);
       for (i = n; i > 0; --i)
         stack_push(interp, values[i-1]);
+
       return 0;
     }
   }
@@ -1000,6 +1007,53 @@ static int builtin_number(interpreter* interp) {
   return 1;
 }
 
+static int builtin_add(interpreter* interp) {
+  signed a, b;
+  if (!stack_pop_ints(interp, 2, &b, &a)) return 0;
+  stack_push(interp, int_to_string(a+b));
+  return 1;
+}
+
+static int builtin_sub(interpreter* interp) {
+  signed a, b;
+  if (!stack_pop_ints(interp, 2, &b, &a)) return 0;
+  stack_push(interp, int_to_string(a-b));
+  return 1;
+}
+
+static int builtin_mul(interpreter* interp) {
+  signed a, b;
+  if (!stack_pop_ints(interp, 2, &b, &a)) return 0;
+  stack_push(interp, int_to_string(a*b));
+  return 1;
+}
+
+static int builtin_div(interpreter* interp) {
+  signed a, b;
+  if (!stack_pop_ints(interp, 2, &b, &a)) return 0;
+
+  if (!b) {
+    print_error("Division by zero");
+    return 0;
+  }
+
+  stack_push(interp, int_to_string(a/b));
+  return 1;
+}
+
+static int builtin_mod(interpreter* interp) {
+  signed a, b;
+  if (!stack_pop_ints(interp, 2, &b, &a)) return 0;
+
+  if (!b) {
+    print_error("Division by zero");
+    return 0;
+  }
+
+  stack_push(interp, int_to_string(a%b));
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1024,6 +1078,11 @@ struct builtins_t builtins_[] = {
   { '8', builtin_number },
   { '9', builtin_number },
   { '#', builtin_number },
+  { '+', builtin_add },
+  { '-', builtin_sub },
+  { '*', builtin_mul },
+  { '/', builtin_div },
+  { '%', builtin_mod },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
