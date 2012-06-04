@@ -111,10 +111,6 @@ Built-in commands are:
     repeat.
   W     (short-while: code -> ???)
     Evaluate code. If the top of the stack (popped) is true, repeat.
-  u     (until: cond code -> ???)
-    Like while, but negate the result of cond.
-  U     (short-until: code -> ???)
-    Like short-while, but negate the result of code.
   f     (for: reg from to body -> ???)
     Execute body with reg set to increasing values starting at from and ending
     (but not including) to.
