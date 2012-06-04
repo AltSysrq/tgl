@@ -652,7 +652,8 @@ static int builtin_print(interpreter* interp) {
 
   if (!(str = stack_pop(interp))) UNDERFLOW;
 
-  if (1 != fwrite(string_data(str), str->len, 1, stdout)) {
+  fwrite(string_data(str), str->len, 1, stdout);
+  if (ferror(stdout)) {
     free(str);
     print_error(strerror(errno));
     return 0;
