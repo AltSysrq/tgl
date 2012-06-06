@@ -1501,6 +1501,77 @@ static int builtin_stashretrieve(interpreter* interp) {
   return 1;
 }
 
+static int builtin_escape(interpreter* interp) {
+  byte what, x0, x1;
+  string s;
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Escaped character expected");
+    return 0;
+  }
+
+  switch (curr(interp)) {
+  case 'a': what = '\a'; break;
+  case 'b': what = '\b'; break;
+  case 'e': what = '\033'; break;
+  case 'f': what = '\f'; break;
+  case 'n': what = '\n'; break;
+  case 'r': what = '\r'; break;
+  case 't': what = '\t'; break;
+  case 'v': what = '\v'; break;
+  case '"':
+  case '\\':
+  case '\'':
+  case '$':
+  case '%':
+  case '`': what = curr(interp); break;
+  case 'x': {
+    /* Extract both digits if present. */
+    ++interp->ip;
+    if (is_ip_valid(interp)) {
+      x0 = curr(interp);
+      ++interp->ip;
+      if (is_ip_valid(interp))
+        x1 = curr(interp);
+    }
+
+    if (!is_ip_valid(interp)) {
+      print_error("Two hexits expected after \\x");
+      return 0;
+    }
+
+    /* Convert integer */
+    if (x0 >= '0' && x0 <= '9')
+      what = (x0 - '0') << 4;
+    else if (x0 >= 'a' && x0 <= 'f')
+      what = (x0 + 10 - 'a') << 4;
+    else if (x0 >= 'A' && x0 <= 'F')
+      what = (x0 + 10 - 'A') << 4;
+    else {
+      print_error("First \\x hexit is invalid");
+      return 0;
+    }
+    if (x1 >= '0' && x1 <= '9')
+      what |= (x1 - '0');
+    else if (x1 >= 'a' && x1 <= 'f')
+      what |= (x1 + 10 - 'a');
+    else if (x1 >= 'A' && x1 <= 'F')
+      what |= (x1 + 10 - 'A');
+    else {
+      print_error("Second \\x hexit is invalid");
+      return 0;
+    }
+  } break;
+  default:
+    print_error("Invalid escape sequence");
+    return 0;
+  }
+
+  /* Create and push the string. */
+  stack_push(interp, create_string(&what, (&what)+1));
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1555,6 +1626,7 @@ struct builtins_t builtins_[] = {
   { 'p', builtin_stash },
   { 'P', builtin_retrieve },
   { 'z', builtin_stashretrieve },
+  { '\\', builtin_escape },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
