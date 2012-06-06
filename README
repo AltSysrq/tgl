@@ -51,9 +51,14 @@ Built-in commands are:
   'C    (char: () -> string)
     The instruction pointer is advanced one space, and the character C is
     pushed onto the stack as a one-character string.
-    If C is greater than 127, more characters will be read into the string
-    until one less than 128 is encountered, which is not added. This allows a
-    single UTF-8 character to be pushed by this method.
+    Note that, since TGL is not Unicode-aware, non-ASCII characters will not
+    work as expected with this command. For example, in UTF-8, the code
+      'ß
+    will not push a string containing a single Eszett, but rather the byte C3;
+    the interpreter will then try to execute a command corresponding to 0x9F,
+    which will probably fail.
+    For unicode characters, using double-quotes (see below) will work, in that
+    the string will contain both bytes encoding the character.
   :     (dupe: item -> item item)
     The top item on the stack is duplicated.
   ;     (drop: item -> ())
