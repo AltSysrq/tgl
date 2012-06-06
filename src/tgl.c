@@ -1572,6 +1572,85 @@ static int builtin_escape(interpreter* interp) {
   return 1;
 }
 
+static int builtin_string(interpreter* interp) {
+  string accum, s;
+  unsigned begin, end;
+
+  accum = empty_string();
+  ++interp->ip;
+  while (1) {
+    /* Scan for the next important character. */
+    for (begin = interp->ip; is_ip_valid(interp); ++interp->ip)
+      if (curr(interp) == '"' ||
+          curr(interp) == '$' ||
+          curr(interp) == '`' ||
+          curr(interp) == '\\' ||
+          curr(interp) == '%')
+        break;
+
+    /* Found important character or EOI. */
+    if (!is_ip_valid(interp)) {
+      print_error("Encountered end-of-input in string literal");
+      goto error;
+    }
+
+    /* Append everything in-between */
+    accum = append_data(accum,
+                        string_data(interp->code) + begin,
+                        string_data(interp->code) + interp->ip);
+
+    switch (curr(interp)) {
+    case '"': goto done;
+    case '$':
+      ++interp->ip;
+      if (!is_ip_valid(interp)) {
+        print_error("Encountered end-of-input in string literal");
+        goto error;
+      }
+      /* Append value of this register */
+      accum = append_string(accum,
+                            interp->registers[curr(interp)]);
+      break;
+
+    case '%':
+      s = stack_pop(interp);
+      if (!s) {
+        print_error("Stack underflow");
+        goto error;
+      }
+      accum = append_string(accum, s);
+      free(s);
+      break;
+
+    case '`':
+      accum = append_string(accum, interp->initial_whitespace);
+      break;
+
+    case '\\':
+      if (!builtin_escape(interp)) goto error;
+      s = stack_pop(interp);
+      /* Popping will always succeed if escape returned success. */
+      accum = append_string(accum, s);
+      free(s);
+      break;
+    }
+
+    /* All the above (which don't goto elsewhere) leave the IP on the end of
+     * whatever special thing they did.
+     */
+    ++interp->ip;
+  }
+
+  done:
+  stack_push(interp, accum);
+  return 1;
+
+  error:
+  diagnostic(interp, NULL);
+  free(accum);
+  return 0;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1626,7 +1705,8 @@ struct builtins_t builtins_[] = {
   { 'p', builtin_stash },
   { 'P', builtin_retrieve },
   { 'z', builtin_stashretrieve },
-  { '\\', builtin_escape },
+  { '\\',builtin_escape },
+  { '"', builtin_string },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
