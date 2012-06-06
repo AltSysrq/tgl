@@ -1623,6 +1623,10 @@ static int builtin_string(interpreter* interp) {
       break;
 
     case '`':
+      if (!interp->initial_whitespace) {
+        print_error("Initial whitespace (`) not available in this context.");
+        goto error;
+      }
       accum = append_string(accum, interp->initial_whitespace);
       break;
 
