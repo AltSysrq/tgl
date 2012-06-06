@@ -1492,6 +1492,15 @@ static int builtin_retrieve(interpreter* interp) {
   return 1;
 }
 
+static int builtin_stashretrieve(interpreter* interp) {
+  string s;
+  if (!(s = stack_pop(interp))) UNDERFLOW;
+
+  stack_push(interp,
+             append_cstr(append_string(convert_string("p"), s), "P"));
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1545,6 +1554,7 @@ struct builtins_t builtins_[] = {
   { 'X', builtin_eval },
   { 'p', builtin_stash },
   { 'P', builtin_retrieve },
+  { 'z', builtin_stashretrieve },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
