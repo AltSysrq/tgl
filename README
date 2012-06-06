@@ -159,7 +159,7 @@ Built-in commands are:
       \v       VT
       \x##     The character ## (hexadecimal)
     The following sequences result in simply the character being escaped:
-      \" \\ \$ \% \`
+      \" \\ \$ \% \` \'
   #     (number: () -> integer)
     Skips the #, then reads an optional sign followed by digits and pushes the
     resulting integer.
