@@ -1655,6 +1655,11 @@ static int builtin_string(interpreter* interp) {
   return 0;
 }
 
+static int builtin_rand(interpreter* interp) {
+  stack_push(interp, int_to_string(rand() & 0xFFFF));
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1711,6 +1716,7 @@ struct builtins_t builtins_[] = {
   { 'z', builtin_stashretrieve },
   { '\\',builtin_escape },
   { '"', builtin_string },
+  { '?', builtin_rand },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
