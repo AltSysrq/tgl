@@ -16,6 +16,14 @@ intended to be used as a sort of macro system with a real editor (eg, with
 shell-command-on-region in Emacs) rather than a real programming language. As
 such, it is optimised ONLY for terseness, with no focus on readability at all.
 
+STATUS
+
+TGL is not yet complete. The following are not yet supported:
++ Command-line arguments
++ Context (@ commands)
++ History (h command)
++ User library (v, V commands)
+
 BASICS
 
 Every value in TGL is a string. These strings may be pushed onto/popped from a
