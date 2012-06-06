@@ -1717,12 +1717,15 @@ struct builtins_t builtins_[] = {
 
 /* Reads all text from the given file, then executes it.
  *
+ * If scan_initial_whitespace is non-zero, the leading whitespace characters
+ * are accumulated and stored in interpreter::initial_whitespace.
+ *
  * Returns an exit code.
  */
-int exec_file(interpreter* interp, FILE* file) {
+int exec_file(interpreter* interp, FILE* file, int scan_initial_whitespace) {
   string input;
   char buffer[1024];
-  unsigned len;
+  unsigned len, i;
   int status = 0;
 
   input = empty_string();
@@ -1737,6 +1740,13 @@ int exec_file(interpreter* interp, FILE* file) {
     return EXIT_IO_ERROR;
   }
 
+  if (scan_initial_whitespace) {
+    for (i=0; i < input->len && isspace(string_data(input)[i]); ++i);
+    if (interp->initial_whitespace)
+      free(interp->initial_whitespace);
+    interp->initial_whitespace = create_string(string_data(input),
+                                               string_data(input)+i);
+  }
   if (!exec_code(interp, input))
     status = EXIT_PROGRAM_ERROR;
 
@@ -1747,5 +1757,5 @@ int exec_file(interpreter* interp, FILE* file) {
 int main(int argc, char** argv) {
   interpreter interp;
   interp_init(&interp);
-  return exec_file(&interp, stdin);
+  return exec_file(&interp, stdin, 1);
 }
