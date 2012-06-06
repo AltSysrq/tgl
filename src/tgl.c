@@ -1762,6 +1762,7 @@ int exec_file(interpreter* interp, FILE* file, int scan_initial_whitespace) {
 
 int main(int argc, char** argv) {
   interpreter interp;
+  srand(time(NULL));
   interp_init(&interp);
   return exec_file(&interp, stdin, 1);
 }
