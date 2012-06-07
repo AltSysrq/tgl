@@ -21,7 +21,6 @@ STATUS
 TGL is not yet complete. The following are not yet supported:
 + Command-line arguments
 + Context (@ commands)
-+ History (h command)
 + User library (v, V commands)
 
 BASICS
