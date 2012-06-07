@@ -1735,41 +1735,41 @@ struct builtins_t builtins_[] = {
 
 /* BEGIN: Persistence */
 
-/* Struct to head each variable in the variable persistence file. */
-typedef struct persistent_variable {
+/* Struct to head each register in the register persistence file. */
+typedef struct persistent_register {
   time_t access_time;
   unsigned length;
-} persistent_variable;
+} persistent_register;
 
-/* Magic bytes at the beginning of the variable persistence file. */
-static byte variable_persistence_magic[8] = {
-  'T', 'g', 'l', 'V', sizeof(persistent_variable), 0, 0, 0,
+/* Magic bytes at the beginning of the register persistence file. */
+static byte register_persistence_magic[8] = {
+  'T', 'g', 'l', 'V', sizeof(persistent_register), 0, 0, 0,
 };
 
-/* The format of the variable persistence file is as follows:
- *   8 bytes: TglV<size of persistent_variable> 0 0 0
+/* The format of the register persistence file is as follows:
+ *   8 bytes: TglV<size of persistent_register> 0 0 0
  *     The magic header indicates the type of the file and the size of the
- *     persistent_variable struct. Both are used on reading to make sure that
+ *     persistent_register struct. Both are used on reading to make sure that
  *     the file is compatible.
- *   struct persistent_variable { access_time = 1, length = 2 }
- *     This is used on reading to ensure that the layout of persistent_variable
+ *   struct persistent_register { access_time = 1, length = 2 }
+ *     This is used on reading to ensure that the layout of persistent_register
  *     matches what the program actually uses.
  *   256 times:
- *     struct persistent_variable
- *     byte[persistent_variable.length]
+ *     struct persistent_register
+ *     byte[persistent_register.length]
  *       Stores the data for each of the 256 registers, in order.
  */
 
-/* Reads persistent variables from the given file.
+/* Reads persistent registers from the given file.
  *
  * Returns 1 on success, 0 on errors. If the file is valid but truncated, the
- * variables that could be read will have been altered.
+ * registers that could be read will have been altered.
  *
  * It is not an error if the file does not exist.
  */
-static int read_persistent_variables(interpreter* interp, char* filename) {
-  byte magic[sizeof(variable_persistence_magic)];
-  persistent_variable header;
+static int read_persistent_registers(interpreter* interp, char* filename) {
+  byte magic[sizeof(register_persistence_magic)];
+  persistent_register header;
   string s;
   FILE* file;
   unsigned i;
@@ -1780,7 +1780,7 @@ static int read_persistent_variables(interpreter* interp, char* filename) {
       /* File does not exist, not an error to us. */
       return 1;
     } else {
-      fprintf(stderr, "tgl: error reading variable persistence file: %s\n",
+      fprintf(stderr, "tgl: error reading register persistence file: %s\n",
               strerror(errno));
       return 0;
     }
@@ -1788,22 +1788,22 @@ static int read_persistent_variables(interpreter* interp, char* filename) {
 
   /* Read and check magic */
   if (!fread(magic, sizeof(magic), 1, file)) {
-    fprintf(stderr, "tgl: error reading variable persistence file: %s\n",
+    fprintf(stderr, "tgl: error reading register persistence file: %s\n",
             strerror(errno));
     fclose(file);
     return 0;
   }
 
-  if (memcmp(magic, variable_persistence_magic, sizeof(magic))) {
+  if (memcmp(magic, register_persistence_magic, sizeof(magic))) {
     fclose(file);
-    fprintf(stderr, "tgl: variable persistence file %s is incompatible\n",
+    fprintf(stderr, "tgl: register persistence file %s is incompatible\n",
             filename);
     return 0;
   }
 
   /* Read and check format */
   if (!fread(&header, sizeof(header), 1, file)) {
-    fprintf(stderr, "tgl: error reading variable persistence file: %s\n",
+    fprintf(stderr, "tgl: error reading register persistence file: %s\n",
             strerror(errno));
     fclose(file);
     return 0;
@@ -1811,7 +1811,7 @@ static int read_persistent_variables(interpreter* interp, char* filename) {
 
   if (header.access_time != 1 || header.length != 2) {
     fclose(file);
-    fprintf(stderr, "tgl: variable persistence file %s is incompatible\n",
+    fprintf(stderr, "tgl: register persistence file %s is incompatible\n",
             filename);
     return 0;
   }
@@ -1819,7 +1819,7 @@ static int read_persistent_variables(interpreter* interp, char* filename) {
   /* Read each register */
   for (i = 0; i < 256; ++i) {
     if (!fread(&header, sizeof(header), 1, file)) {
-      fprintf(stderr, "tgl: error reading variable persistence file: %s\n",
+      fprintf(stderr, "tgl: error reading register persistence file: %s\n",
               strerror(errno));
       fclose(file);
       return 0;
@@ -1832,7 +1832,7 @@ static int read_persistent_variables(interpreter* interp, char* filename) {
     s = malloc(sizeof(struct string) + header.length);
     if (!s) {
       fprintf(stderr,
-              "tgl: memory allocation for persistent variable failed\n");
+              "tgl: memory allocation for persistent register failed\n");
       fclose(file);
       return 0;
     }
@@ -1841,7 +1841,7 @@ static int read_persistent_variables(interpreter* interp, char* filename) {
     s->len = header.length;
     if (s->len > 0) {
       if (s->len != fread(string_data(s), 1, s->len, file)) {
-        fprintf(stderr, "tgl: error reading variable persistence file: %s\n",
+        fprintf(stderr, "tgl: error reading register persistence file: %s\n",
                 strerror(errno));
         free(s);
         fclose(file);
@@ -1849,7 +1849,7 @@ static int read_persistent_variables(interpreter* interp, char* filename) {
       }
     }
 
-    /* Save the variable */
+    /* Save the register */
     free(interp->registers[i]);
     interp->registers[i] = s;
     interp->reg_access[i] = header.access_time;
@@ -1860,20 +1860,20 @@ static int read_persistent_variables(interpreter* interp, char* filename) {
   return 1;
 }
 
-/* Writes persistent variables to the given file.
+/* Writes persistent registers to the given file.
  *
  * Returns 1 on success, 0 on error.
  */
-static int write_persistent_variables(interpreter* interp, char* filename) {
-  persistent_variable header;
+static int write_persistent_registers(interpreter* interp, char* filename) {
+  persistent_register header;
   FILE* file;
   unsigned i;
 
   file = fopen(filename, "w");
   if (!file) goto error;
 
-  if (!fwrite(variable_persistence_magic,
-              sizeof(variable_persistence_magic), 1, file))
+  if (!fwrite(register_persistence_magic,
+              sizeof(register_persistence_magic), 1, file))
     goto error;
 
   header.access_time = 1;
@@ -1895,7 +1895,7 @@ static int write_persistent_variables(interpreter* interp, char* filename) {
   return 1;
 
   error:
-  fprintf(stderr, "tgl: error writing variable persistence file: %s\n",
+  fprintf(stderr, "tgl: error writing register persistence file: %s\n",
           strerror(errno));
   if (file)
     fclose(file);
