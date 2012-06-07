@@ -17,6 +17,10 @@
 #define EXIT_IO_ERROR 254
 #define EXIT_OUT_OF_MEMORY 255
 
+/* Globals */
+/* The name of the user library file. */
+static char* user_library_file;
+
 /* Versions of malloc and realloc that abort on memory exhaustion. */
 static inline void* tmalloc(size_t size) {
   void* result = malloc(size);
@@ -1956,8 +1960,9 @@ static int write_persistent_registers(interpreter* interp, char* filename) {
  *
  * Returns an exit code.
  */
-int exec_file(interpreter* interp, FILE* file, int scan_initial_whitespace,
-              int enable_history) {
+static int exec_file(interpreter* interp, FILE* file,
+                     int scan_initial_whitespace,
+                     int enable_history) {
   string input;
   char buffer[1024];
   unsigned len, i;
@@ -2014,9 +2019,38 @@ int exec_file(interpreter* interp, FILE* file, int scan_initial_whitespace,
   return status;
 }
 
+/* Opens and executes the user library, then clears the stack. */
+static void load_user_library(interpreter* interp) {
+  FILE* file;
+  int status;
+
+  file = fopen(user_library_file, "r");
+  if (!file) {
+    /* If the file doesn't exist, ignore silently; otherwise, print a
+     * diagnostic.
+     */
+    if (errno != ENOENT)
+      fprintf(stderr, "tgl: unable to open user library: %s\n",
+              strerror(errno));
+    return;
+  }
+
+  status = exec_file(interp, file, 0, 0);
+  fclose(file);
+
+  /* Clear the stack */
+  while (interp->stack)
+    free(stack_pop(interp));
+
+  /* Print notice about error in the user library if any occurred */
+  if (status)
+    fprintf(stderr, "tgl: error occurred in user library\n");
+}
+
 int main(int argc, char** argv) {
   interpreter interp;
   char reg_persistence_file_default[256];
+  char user_library_file_default[256];
   int ret;
 
   /* Init default file names */
@@ -2024,14 +2058,24 @@ int main(int argc, char** argv) {
            sizeof(reg_persistence_file_default),
            "%s/.tgl_registers",
            getenv("HOME"));
+  snprintf(user_library_file_default,
+           sizeof(user_library_file_default),
+           "%s/.tgl",
+           getenv("HOME"));
+  user_library_file = user_library_file_default;
 
   srand(time(NULL));
   interp_init(&interp);
 
-  /* Read persistent registers, execute, write if successful, return */
+  /* Read persistent registers */
   read_persistent_registers(&interp, reg_persistence_file_default);
+  /* Try to execute the user library */
+  load_user_library(&interp);
+  /* Execute primary input */
   ret = exec_file(&interp, stdin, 1, 1);
+  /* If successful, save registers */
   if (ret == 0)
     write_persistent_registers(&interp, reg_persistence_file_default);
+  /* Done, return status to the OS */
   return ret;
 }
