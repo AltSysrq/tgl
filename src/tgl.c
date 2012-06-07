@@ -1945,7 +1945,22 @@ int exec_file(interpreter* interp, FILE* file, int scan_initial_whitespace) {
 
 int main(int argc, char** argv) {
   interpreter interp;
+  char reg_persistence_file_default[256];
+  int ret;
+
+  /* Init default file names */
+  snprintf(reg_persistence_file_default,
+           sizeof(reg_persistence_file_default),
+           "%s/.tgl_registers",
+           getenv("HOME"));
+
   srand(time(NULL));
   interp_init(&interp);
-  return exec_file(&interp, stdin, 1);
+
+  /* Read persistent registers, execute, write if successful, return */
+  read_persistent_registers(&interp, reg_persistence_file_default);
+  ret = exec_file(&interp, stdin, 1);
+  if (ret == 0)
+    write_persistent_registers(&interp, reg_persistence_file_default);
+  return ret;
 }
