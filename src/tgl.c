@@ -322,6 +322,8 @@ typedef struct interpreter {
    * executed. This is NULL before the first command is executed.
    */
   string initial_whitespace;
+  /* Whether to enable saving history. */
+  int enable_history;
 } interpreter;
 
 /* Pushes the given string onto the stack of the given interpreter.
@@ -1909,13 +1911,19 @@ static int write_persistent_registers(interpreter* interp, char* filename) {
  * If scan_initial_whitespace is non-zero, the leading whitespace characters
  * are accumulated and stored in interpreter::initial_whitespace.
  *
+ * If enable_history is non-zero, the interpreter's enable_history attribute
+ * will be set and honoured when it finishes successfully.
+ *
  * Returns an exit code.
  */
-int exec_file(interpreter* interp, FILE* file, int scan_initial_whitespace) {
+int exec_file(interpreter* interp, FILE* file, int scan_initial_whitespace,
+              int enable_history) {
   string input;
   char buffer[1024];
   unsigned len, i;
   int status = 0;
+
+  interp->enable_history = enable_history;
 
   input = empty_string();
   while (!feof(file) && !ferror(file)) {
@@ -1939,6 +1947,29 @@ int exec_file(interpreter* interp, FILE* file, int scan_initial_whitespace) {
   if (!exec_code(interp, input))
     status = EXIT_PROGRAM_ERROR;
 
+  /* Add to history if appropriate */
+  if (enable_history && interp->enable_history && status == 0) {
+    /* Exclude the command sequence "hX" from history. */
+    for (i = 0; i < input->len && isspace(string_data(input)[i]); ++i);
+    if (i < input->len && 'h' == string_data(input)[i]) {
+      for (; i < input->len && isspace(string_data(input)[i]); ++i);
+      if (i < input->len && 'X' == string_data(input)[i]) {
+        for (; i < input->len && isspace(string_data(input)[i]); ++i);
+        if (i == input->len) enable_history = 0;
+      }
+    }
+
+    if (enable_history) {
+      /* Shift registers 0..30 back */
+      free(interp->registers[0x1F]);
+      memmove(interp->registers+1, interp->registers, 0x1F*sizeof(string));
+      memmove(interp->reg_access+1, interp->reg_access, 0x1F*sizeof(time_t));
+      /* Log new history */
+      interp->registers[0] = dupe_string(input);
+      touch_reg(interp, 0);
+    }
+  }
+
   free(input);
   return status;
 }
@@ -1959,7 +1990,7 @@ int main(int argc, char** argv) {
 
   /* Read persistent registers, execute, write if successful, return */
   read_persistent_registers(&interp, reg_persistence_file_default);
-  ret = exec_file(&interp, stdin, 1);
+  ret = exec_file(&interp, stdin, 1, 1);
   if (ret == 0)
     write_persistent_registers(&interp, reg_persistence_file_default);
   return ret;
