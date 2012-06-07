@@ -207,7 +207,7 @@ Built-in commands are:
     is prefixed by context statements to limit any definition to this context
     (s) or file type (e).
 
-VARIABLE PERSISTENCE
+REGISTER PERSISTENCE
 
 TGL can save the values within registers across invocations. By default, these
 data are stored in ~/.tgl_registers. Whenever TGL exits successfully, the
