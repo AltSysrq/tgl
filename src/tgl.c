@@ -324,6 +324,8 @@ typedef struct interpreter {
   string initial_whitespace;
   /* Whether to enable saving history. */
   int enable_history;
+  /* The current implicit offset for the h command. */
+  unsigned history_offset;
 } interpreter;
 
 /* Pushes the given string onto the stack of the given interpreter.
@@ -1674,6 +1676,37 @@ static int builtin_rand(interpreter* interp) {
   return 1;
 }
 
+static int builtin_history(interpreter* interp) {
+  string soff;
+  signed off;
+
+  soff = stack_pop(interp);
+  if (!soff)
+    /* Assume 0 */
+    off = 0;
+  else
+    if (!string_to_int(soff, &off)) {
+      print_error("Invalid integer");
+      stack_push(interp, soff);
+      return 0;
+    }
+
+  off += interp->history_offset;
+
+  if (off < 0 || off >= 0x20) {
+    print_error("Invalid history offset");
+    if (soff)
+      stack_push(interp, soff);
+    return 0;
+  }
+
+  /* OK */
+  stack_push(interp, dupe_string(interp->registers[off]));
+  free(soff);
+  ++interp->history_offset;
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1731,6 +1764,7 @@ struct builtins_t builtins_[] = {
   { '\\',builtin_escape },
   { '"', builtin_string },
   { '?', builtin_rand },
+  { 'h', builtin_history },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
@@ -1952,9 +1986,9 @@ int exec_file(interpreter* interp, FILE* file, int scan_initial_whitespace,
     /* Exclude the command sequence "hX" from history. */
     for (i = 0; i < input->len && isspace(string_data(input)[i]); ++i);
     if (i < input->len && 'h' == string_data(input)[i]) {
-      for (; i < input->len && isspace(string_data(input)[i]); ++i);
+      for (++i; i < input->len && isspace(string_data(input)[i]); ++i);
       if (i < input->len && 'X' == string_data(input)[i]) {
-        for (; i < input->len && isspace(string_data(input)[i]); ++i);
+        for (++i; i < input->len && isspace(string_data(input)[i]); ++i);
         if (i == input->len) enable_history = 0;
       }
     }
