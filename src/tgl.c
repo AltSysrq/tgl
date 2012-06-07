@@ -2038,9 +2038,10 @@ static void load_user_library(interpreter* interp) {
   status = exec_file(interp, file, 0, 0);
   fclose(file);
 
-  /* Clear the stack */
+  /* Clear the stack and reset history offset */
   while (interp->stack)
     free(stack_pop(interp));
+  interp->history_offset = 0;
 
   /* Print notice about error in the user library if any occurred */
   if (status)

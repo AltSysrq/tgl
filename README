@@ -228,7 +228,8 @@ USER LIBRARY
 
 Before executing primary input, TGL will first read in the user library, by
 default located at ~/.tgl. This file is interpreted in the same manner as
-normal input. The stack is cleared after reading it.
+normal input. The stack is cleared after reading it, and the history offset
+reset to zero.
 
 Any error that occurs while parsing the user library is ignored, though the
 normal diagnostics are displayed.
