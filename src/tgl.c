@@ -304,6 +304,8 @@ typedef struct interpreter {
   command commands[256];
   /* All registers. Initially initialised to empty strings. */
   string registers[256];
+  /* The last time of access for each register. */
+  time_t reg_access[256];
   /* The stack, initially NULL. */
   stack_elt* stack;
   /* The list of long commands, initially NULL. */
@@ -457,6 +459,11 @@ static inline byte curr(interpreter* interp) {
 /* Returns whether the IP of the given interpreter is valid. */
 static inline int is_ip_valid(interpreter* interp) {
   return interp->ip < interp->code->len;
+}
+
+/* Touches the register of the given name in the given VM. */
+static void touch_reg(interpreter* interp, byte reg) {
+  interp->reg_access[reg] = time(0);
 }
 
 /* Prints an error message to the user. */
@@ -1312,6 +1319,7 @@ static int builtin_for(interpreter* interp) {
   }
 
   /* Done, clean up and return result. */
+  touch_reg(interp, reg);
   free(sreg);
   free(sfrom);
   free(sto);
@@ -1360,6 +1368,7 @@ static int builtin_fors(interpreter* interp) {
   }
 
   /* Done, clean up and return */
+  touch_reg(interp, reg);
   free(sto);
   free(body);
   return result;
@@ -1442,6 +1451,7 @@ static int builtin_read(interpreter* interp) {
   }
 
   stack_push(interp, dupe_string(interp->registers[curr(interp)]));
+  touch_reg(interp, curr(interp));
   return 1;
 }
 
@@ -1458,6 +1468,7 @@ static int builtin_write(interpreter* interp) {
 
   free(interp->registers[curr(interp)]);
   interp->registers[curr(interp)] = dupe_string(val);
+  touch_reg(interp, curr(interp));
   return 1;
 }
 
@@ -1610,6 +1621,7 @@ static int builtin_string(interpreter* interp) {
       /* Append value of this register */
       accum = append_string(accum,
                             interp->registers[curr(interp)]);
+      touch_reg(interp, curr(interp));
       break;
 
     case '%':
@@ -1720,6 +1732,10 @@ struct builtins_t builtins_[] = {
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
+
+/* BEGIN: Persistence */
+
+/* END: Persistence */
 
 /* Reads all text from the given file, then executes it.
  *
