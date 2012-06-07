@@ -194,11 +194,13 @@ Built-in commands are:
       @? Pushes a boolean indicating whether the context is active.
       @s Pushes the context string itself.
       @e Pushes the filename extension of the context string, including the ".".
-  `     (suppress-history: () -> ())
+  H     (suppress-history: () -> ())
     If executed, the input will not be added to the user's TGL history.
   h     (history-access: [off] -> ())
     Expends to the history at the given offset. If the stack is empty when
-    trying to read off, assume 0.
+    trying to read off, assume 0. Each usage of h increments a counter which is
+    implicitly added to whatever offset is specified; the increment occurs
+    after the command has otherwise completed.
   v     (save-code: name code -> ???)
     Creates a defun statement with the given name and code, executes it, then
     appends it to the user's library.
@@ -213,6 +215,15 @@ TGL can save the values within registers across invocations. By default, these
 data are stored in ~/.tgl_registers. Whenever TGL exits successfully, the
 status of these registers is written to this file. The contents of this file is
 not defined and is architecture- (and theoretically compiler-) specific.
+
+HISTORY
+
+By default, each string of commands successfully executed is added to a command
+history. The history is stored in registers 0 through 31, inclusive (that is,
+the registers corresponding to the ASCII control characters), where register 0
+contains the most recently-executed command. The H command can be used to
+suppress history logging, and the h command will access it. Commands whose only
+non-whitespace contents are "hX" are implicitly execluded from history.
 
 EXAMPLES
 
