@@ -224,6 +224,19 @@ contains the most recently-executed command. The H command can be used to
 suppress history logging, and the h command will access it. Commands whose only
 non-whitespace contents are "hX" are implicitly execluded from history.
 
+USER LIBRARY
+
+Before executing primary input, TGL will first read in the user library, by
+default located at ~/.tgl. This file is interpreted in the same manner as
+normal input. The stack is cleared after reading it.
+
+Any error that occurs while parsing the user library is ignored, though the
+normal diagnostics are displayed.
+
+Commands that append to the library surround the appended code with a line feed
+character on either side, and include a "comment" indicating when the insertion
+took place.
+
 EXAMPLES
 
 Hello world:
