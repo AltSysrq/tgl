@@ -1707,6 +1707,11 @@ static int builtin_history(interpreter* interp) {
   return 1;
 }
 
+static int builtin_suppresshistory(interpreter* interp) {
+  interp->enable_history = 0;
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1765,6 +1770,7 @@ struct builtins_t builtins_[] = {
   { '"', builtin_string },
   { '?', builtin_rand },
   { 'h', builtin_history },
+  { 'H', builtin_suppresshistory },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
