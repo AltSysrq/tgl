@@ -1860,6 +1860,48 @@ static int read_persistent_variables(interpreter* interp, char* filename) {
   return 1;
 }
 
+/* Writes persistent variables to the given file.
+ *
+ * Returns 1 on success, 0 on error.
+ */
+static int write_persistent_variables(interpreter* interp, char* filename) {
+  persistent_variable header;
+  FILE* file;
+  unsigned i;
+
+  file = fopen(filename, "w");
+  if (!file) goto error;
+
+  if (!fwrite(variable_persistence_magic,
+              sizeof(variable_persistence_magic), 1, file))
+    goto error;
+
+  header.access_time = 1;
+  header.length = 2;
+  if (!fwrite(&header, sizeof(header), 1, file)) goto error;
+
+  for (i = 0; i < 256; ++i) {
+    header.access_time = interp->reg_access[i];
+    header.length = interp->registers[i]->len;
+    if (!fwrite(&header, sizeof(header), 1, file)) goto error;
+    if (interp->registers[i]->len !=
+        fwrite(string_data(interp->registers[i]), 1,
+               interp->registers[i]->len, file))
+      goto error;
+  }
+
+  /* Success */
+  fclose(file);
+  return 1;
+
+  error:
+  fprintf(stderr, "tgl: error writing variable persistence file: %s\n",
+          strerror(errno));
+  if (file)
+    fclose(file);
+  return 0;
+}
+
 /* END: Persistence */
 
 /* Reads all text from the given file, then executes it.
