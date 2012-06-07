@@ -141,11 +141,10 @@ Built-in commands are:
   RC    (write: string -> ())
     Pops the top stack value into register C.
   p     (stash: () -> <undefined>)
-    Pushes all registers onto the stack. The method in which this is done is
-    undefined.
+    Pushes all registers onto a stack independent of the main one.
   P     (retrieve: <undefined> -> ())
-    Pops all registers from the stack, undoing a "p". The method in which this
-    is is done is undefined.
+    Pops all registers from the stack used by p, undoing the effect of that
+    command.
   z     (stash-retrieve: code -> code)
     Places a "p" at the beginning of code, and a "P" at the end.
   "..." (string: ??? -> string)

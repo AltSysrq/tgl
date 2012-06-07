@@ -255,6 +255,14 @@ typedef struct stack_elt {
   struct stack_elt* next;
 } stack_elt;
 
+/* Represents a P-stack (register backup) element. */
+typedef struct pstack_elt {
+  /* Copies of all register values. */
+  string registers[256];
+  /* The next item in the stack, or NULL if this is the bottom. */
+  struct pstack_elt* next;
+} pstack_elt;
+
 /* Defined later. */
 struct interpreter;
 
@@ -312,6 +320,8 @@ typedef struct interpreter {
   time_t reg_access[256];
   /* The stack, initially NULL. */
   stack_elt* stack;
+  /* The P-stack, initially NULL. */
+  pstack_elt* pstack;
   /* The list of long commands, initially NULL. */
   long_command* long_commands;
   /* The string currently being executed (NOT owned by the interpreter) */
@@ -1490,24 +1500,36 @@ static int builtin_eval(interpreter* interp) {
 
 static int builtin_stash(interpreter* interp) {
   unsigned i;
+  pstack_elt* elt;
 
+  elt = tmalloc(sizeof(pstack_elt));
   for (i = 0; i < 256; ++i)
-    stack_push(interp, dupe_string(interp->registers[i]));
+    elt->registers[i] = dupe_string(interp->registers[i]);
+  elt->next = interp->pstack;
+  interp->pstack = elt;
 
   return 1;
 }
 
 static int builtin_retrieve(interpreter* interp) {
   unsigned i;
-  string s;
+  pstack_elt* top;
 
-  for (i = 256; i > 0; --i) {
-    if (!(s = stack_pop(interp))) UNDERFLOW;
-
-    free(interp->registers[i-1]);
-    interp->registers[i-1] = s;
+  if (!interp->pstack) {
+    print_error("P-stack underflow");
+    return 0;
   }
 
+  top = interp->pstack;
+  interp->pstack = top->next;
+
+  /* Free current registers */
+  for (i = 0; i < 256; ++i)
+    free(interp->registers[i]);
+
+  /* Restore old values */
+  memcpy(interp->registers, top->registers, sizeof(interp->registers));
+  free(top);
   return 1;
 }
 
