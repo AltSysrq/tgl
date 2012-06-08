@@ -1738,6 +1738,89 @@ static int builtin_suppresshistory(interpreter* interp) {
   return 1;
 }
 
+/* Common function for v and V.
+ *
+ * aux: if non-NULL, any code to evaluate before the defun
+ * defun: command to run to define the command.
+ */
+static int builtin_defunlibrary_common(interpreter* interp,
+                                       string aux,
+                                       byte defun) {
+  string name, body, code;
+  struct tm* now;
+  time_t seconds;
+  char header[256], date[64];
+  FILE* out;
+  unsigned i;
+
+  if (!stack_pop_strings(interp, 2, &body, &name)) UNDERFLOW;
+
+  /* We can't allow the name to have parentheses or the NUL character. */
+  for (i = 0; i < name->len; ++i)
+    if (string_data(name)[i] == '(' || string_data(name)[i] == ')' ||
+        string_data(name)[i] == 0) {
+      print_error_s("Invalid command name (for use with v/V)", name);
+      stack_push(interp, name);
+      stack_push(interp, body);
+      return 0;
+    }
+
+  /* Build code */
+  time(&seconds);
+  now = localtime(&seconds);
+  strftime(date, sizeof(date)-1, "%A, %Y.%m.%d %H:%M:%S", now);
+  snprintf(header, sizeof(header), "\n(Added by %s on %s);\n",
+           getenv("USER"), date);
+  code = convert_string(header);
+  if (aux)
+    code = append_string(code, aux);
+  code = append_cstr(code, "(");
+  code = append_string(code, name);
+  code = append_cstr(code, ")(");
+  code = append_string(code, body);
+  code = append_cstr(code, ")");
+  code = append_data(code, &defun, (&defun)+1);
+  code = append_cstr(code, "\n");
+
+  /* Evaluate in current */
+  if (!exec_code(interp, code)) {
+    print_error("not adding function to library due to error(s)");
+    stack_push(interp, name);
+    stack_push(interp, code);
+    return 0;
+  }
+
+  /* Don't need name or code anymore. */
+  free(name);
+  free(body);
+
+  /* OK, write out */
+  out = fopen(user_library_file, "a");
+  if (!out) {
+    fprintf(stderr, "tgl: error: unable to open %s: %s\n",
+            user_library_file, strerror(errno));
+    free(code);
+    return 0;
+  }
+  if (code->len !=
+      fwrite(string_data(code), 1, code->len, out)) {
+    fprintf(stderr, "tgl: error writing to %s: %s\n",
+            user_library_file, strerror(errno));
+    free(code);
+    fclose(out);
+    return 0;
+  }
+
+  /* Success */
+  fclose(out);
+  free(code);
+  return 1;
+}
+
+static int builtin_defunlibrary(interpreter* interp) {
+  return builtin_defunlibrary_common(interp, NULL, 'd');
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1797,6 +1880,7 @@ struct builtins_t builtins_[] = {
   { '?', builtin_rand },
   { 'h', builtin_history },
   { 'H', builtin_suppresshistory },
+  { 'v', builtin_defunlibrary },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */

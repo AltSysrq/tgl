@@ -20,8 +20,7 @@ STATUS
 
 TGL is not yet complete. The following are not yet supported:
 + Command-line arguments
-+ Context (@ commands)
-+ User library (v, V commands)
++ Context (@ commands, V command)
 
 BASICS
 
@@ -257,7 +256,7 @@ Quickly generate case statements for each digit:
   10("`case '$i':\n".)F
 
 Save the previous to a language-specific macro:
-  "nc"hzVe
+  "nc"0hzVe
 
 Resusing the new macro:
   Qnc
