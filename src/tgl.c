@@ -16,6 +16,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <fnmatch.h>
 #ifdef _GNU_SOURCE
 #include <getopt.h>
 #endif /* _GNU_SOURCE */
@@ -241,6 +242,19 @@ static string int_to_string(signed i) {
   static char buffer[2 + sizeof(signed)*3];
   sprintf(buffer, "%d", i);
   return convert_string(buffer);
+}
+
+/* Returns a pointer to the beginning of the current context's extension,
+ * including the leading '.', or the current context itself if it contains no
+ * extension.
+ */
+static char* get_context_extension(char* cxt) {
+  unsigned len;
+  char* ret;
+
+  len = strlen(cxt);
+  for (ret = cxt+len; ret != cxt && *ret != '.'; --ret);
+  return ret;
 }
 /* END: String handling */
 
@@ -1862,6 +1876,93 @@ static int builtin_defunlibrary(interpreter* interp) {
   return builtin_defunlibrary_common(interp, NULL, 'd');
 }
 
+static int builtin_context(interpreter* interp) {
+  byte subcommand;
+  unsigned begin;
+  char glob[256];
+
+  int skip_match, negate_match;
+
+  /* Get the subcommand */
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Expected subcommand after @");
+    return 0;
+  }
+  subcommand = curr(interp);
+
+  switch (subcommand) {
+  case '?':
+    stack_push(interp, int_to_string(interp->context_active));
+    return 1;
+
+  case 's':
+    stack_push(interp, convert_string(current_context));
+    return 1;
+
+  case 'e':
+    stack_push(interp, convert_string(get_context_extension(current_context)));
+    return 1;
+
+  case '=':
+    skip_match = 0, negate_match = 0;
+    break;
+
+  case '!':
+    skip_match = 0, negate_match = 1;
+    break;
+
+  case '&':
+    skip_match = !interp->context_active, negate_match = 0;
+    break;
+
+  case '|':
+    skip_match = interp->context_active, negate_match = 0;
+    break;
+
+  case '^':
+    skip_match = !interp->context_active, negate_match = 1;
+    break;
+
+  case 'v':
+    skip_match = interp->context_active, negate_match = 1;
+    break;
+
+  default:
+    print_error("Unknown @ subcommand");
+    return 0;
+  }
+
+  /* Read the pattern in */
+  ++interp->ip;
+  begin = interp->ip;
+
+  while (is_ip_valid(interp) && !isspace(curr(interp)))
+    ++interp->ip;
+
+  if (begin == interp->ip) {
+    print_error("Context glob expected after @ subcommand");
+    return 0;
+  }
+
+  if (interp->ip - begin >= sizeof(glob)) {
+    print_error("Glob string too long");
+    return 0;
+  }
+
+  /* Do nothing more if skip_match is true. */
+  if (!skip_match) {
+    memcpy(glob, string_data(interp->code) + begin,
+           interp->ip - begin);
+    glob[interp->ip - begin] = 0;
+    /* Must check to see if it matches. */
+    interp->context_active = !fnmatch(glob, current_context, 0) ^ negate_match;
+  }
+
+  /* Done */
+  return 1;
+}
+
 struct builtins_t builtins_[] = {
   { 'Q', builtin_long_command },
   { '\'',builtin_char },
@@ -1922,6 +2023,7 @@ struct builtins_t builtins_[] = {
   { 'h', builtin_history },
   { 'H', builtin_suppresshistory },
   { 'v', builtin_defunlibrary },
+  { '@', builtin_context },
   { 0, 0 },
 }, * builtins = builtins_;
 /* END: Built-in commands */
