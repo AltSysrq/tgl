@@ -189,7 +189,8 @@ Built-in commands are:
   @C... (context: () -> () or () -> result)
     Alters the current context. The first character after the @ indicates how
     to affect the context, and the characters afterward up to but not including
-    the next whitespace indicate what to match. Legal values for C are:
+    the next whitespace indicate what to match. "Match" indicates that the
+    context ends with the given string. Legal values for C are:
       =  Set context activeness to the result of the match
       !  Set context activeness to the negation of the result
       &  Deactivate context if the result is negative
@@ -273,5 +274,3 @@ Resusing the new macro:
 Creating a macro to place strings into C-strings (quoting and escaping):
   @=.h @|.c
   "cq" (\\(\\)\n(\n)\r(\r)\t(\t)\"(\")\e(\e)\f(\f)\v(\v)8m"\"%\"") D
-Note that the contexts will match ANY context containing ".h" or ".c" anywhere,
-not just ending in those names.
