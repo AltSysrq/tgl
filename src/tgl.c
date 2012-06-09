@@ -1876,6 +1876,40 @@ static int builtin_defunlibrary(interpreter* interp) {
   return builtin_defunlibrary_common(interp, NULL, 'd');
 }
 
+static int builtin_contextualdefunlibrary(interpreter* interp) {
+  int status;
+  string cxt;
+
+  /* Get subcommand */
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Expected subcommand");
+    return 0;
+  }
+
+  switch (curr(interp)) {
+  case 's':
+    cxt = convert_string("@=");
+    cxt = append_cstr(cxt, current_context);
+    cxt = append_cstr(cxt, "\n");
+    break;
+
+  case 'e':
+    cxt = convert_string("@=");
+    cxt = append_cstr(cxt, get_context_extension(current_context));
+    cxt = append_cstr(cxt, "\n");
+    break;
+
+  default:
+    print_error("Unknown subcommand");
+    return 0;
+  }
+
+  status = builtin_defunlibrary_common(interp, cxt, 'D');
+  free(cxt);
+  return status;
+}
+
 static int builtin_context(interpreter* interp) {
   byte subcommand;
   unsigned begin;
@@ -2023,6 +2057,7 @@ struct builtins_t builtins_[] = {
   { 'h', builtin_history },
   { 'H', builtin_suppresshistory },
   { 'v', builtin_defunlibrary },
+  { 'V', builtin_contextualdefunlibrary },
   { '@', builtin_context },
   { 0, 0 },
 }, * builtins = builtins_;
