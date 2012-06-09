@@ -16,8 +16,15 @@ AC_PROG_CC
 AC_CHECK_HEADERS([fcntl.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_C_INLINE
+AC_TYPE_SIZE_T
 
 # Checks for library functions.
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([memmove memset strerror])
+AC_CHECK_FUNCS([getopt_long], AC_DEFINE(_GNU_SOURCE, [],
+                              [Use GNU Extensions if available]))
 
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT

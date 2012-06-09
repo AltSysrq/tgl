@@ -1,7 +1,8 @@
 /* Main program for TGL (Text Generation Language). */
 
-/* TODO: Have configure define this. */
-#define _GNU_SOURCE
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
