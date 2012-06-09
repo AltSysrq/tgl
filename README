@@ -16,10 +16,19 @@ intended to be used as a sort of macro system with a real editor (eg, with
 shell-command-on-region in Emacs) rather than a real programming language. As
 such, it is optimised ONLY for terseness, with no focus on readability at all.
 
+USAGE
+tgl [options] [infile]
+Options:
+  -l, --library file                    Use the given file as the user library
+  -r, --register-persistence file       Use the given file for register
+                                        persistence
+  -h, --help                            Display usage information
+
+If infile is not specified, read program from stdin.
+
 STATUS
 
 TGL is not yet complete. The following are not yet supported:
-+ Command-line arguments
 + Context (@ commands, V command)
 
 BASICS
