@@ -212,15 +212,6 @@ static int string_to_int(string s, signed* dst) {
   return 1;
 }
 
-/* Like string_to_int(), but also frees the input string if successful. */
-static int string_to_int_free(string s, signed* dst) {
-  int success = string_to_int(s, dst);
-  if (success)
-    free(s);
-
-  return success;
-}
-
 /* Converts the given string to a boolean value. */
 static int string_to_bool(string s) {
   signed a;
@@ -633,6 +624,47 @@ static void interp_init(interpreter* interp) {
     interp->commands[(unsigned)builtins[i].name].is_native = 1;
     interp->commands[(unsigned)builtins[i].name].cmd.native = builtins[i].cmd;
   }
+}
+
+/* Frees the contents of the given interpreter.
+ * (But not the interpreter itself.)
+ *
+ * The interpreter is invalid after calling this.
+ */
+static void interp_destroy(interpreter* interp) {
+  unsigned i;
+  stack_elt* currs, *nexts;
+  long_command* currlc, *nextlc;
+  pstack_elt* currps, *nextps;
+
+  for (i = 0; i < 256; ++i) {
+    free(interp->registers[i]);
+    if (interp->commands[i].cmd.user &&
+        !interp->commands[i].is_native)
+      free(interp->commands[i].cmd.user);
+  }
+
+  for (currs = interp->stack; currs; currs = nexts) {
+    nexts = currs->next;
+    free(currs->value);
+    free(currs);
+  }
+  for (currlc = interp->long_commands; currlc; currlc = nextlc) {
+    nextlc = currlc->next;
+    if (!currlc->cmd.is_native)
+      free(currlc->cmd.cmd.user);
+    free(currlc->name);
+    free(currlc);
+  }
+  for (currps = interp->pstack; currps; currps = nextps) {
+    nextps = currps->next;
+    for (i = 0; i < 256; ++i)
+      free(currps->registers[i]);
+    free(currps);
+  }
+
+  if (interp->initial_whitespace)
+    free(interp->initial_whitespace);
 }
 /* END: Interpreter operations */
 
@@ -1552,7 +1584,6 @@ static int builtin_stashretrieve(interpreter* interp) {
 
 static int builtin_escape(interpreter* interp) {
   byte what, x0, x1;
-  string s;
   ++interp->ip;
   if (!is_ip_valid(interp)) {
     print_error("Escaped character expected");
@@ -1623,7 +1654,7 @@ static int builtin_escape(interpreter* interp) {
 
 static int builtin_string(interpreter* interp) {
   string accum, s;
-  unsigned begin, end;
+  unsigned begin;
 
   accum = empty_string();
   ++interp->ip;
@@ -1979,8 +2010,7 @@ static int read_persistent_registers(interpreter* interp, char* filename) {
   /* Read each register */
   for (i = 0; i < 256; ++i) {
     if (!fread(&header, sizeof(header), 1, file)) {
-      fprintf(stderr, "tgl: error reading register persistence file: %s\n",
-              strerror(errno));
+      fprintf(stderr, "tgl: register persistence file truncated\n");
       fclose(file);
       return 0;
     }
@@ -2001,8 +2031,7 @@ static int read_persistent_registers(interpreter* interp, char* filename) {
     s->len = header.length;
     if (s->len > 0) {
       if (s->len != fread(string_data(s), 1, s->len, file)) {
-        fprintf(stderr, "tgl: error reading register persistence file: %s\n",
-                strerror(errno));
+        fprintf(stderr, "tgl: register persistence file truncated\n");
         free(s);
         fclose(file);
         return 0;
@@ -2036,6 +2065,11 @@ static int write_persistent_registers(interpreter* interp, char* filename) {
               sizeof(register_persistence_magic), 1, file))
     goto error;
 
+  /* Set all bytes to zero first so Valgrind won't complain.
+   * (On AMD64, there is unused space between the fields which is
+   * "uninitialised", though its contents do not matter to us, even on-disk.)
+   */
+  memset(&header, 0, sizeof(header));
   header.access_time = 1;
   header.length = 2;
   if (!fwrite(&header, sizeof(header), 1, file)) goto error;
@@ -2044,10 +2078,11 @@ static int write_persistent_registers(interpreter* interp, char* filename) {
     header.access_time = interp->reg_access[i];
     header.length = interp->registers[i]->len;
     if (!fwrite(&header, sizeof(header), 1, file)) goto error;
-    if (interp->registers[i]->len !=
-        fwrite(string_data(interp->registers[i]), 1,
-               interp->registers[i]->len, file))
-      goto error;
+    if (interp->registers[i]->len > 0)
+      if (interp->registers[i]->len !=
+          fwrite(string_data(interp->registers[i]), 1,
+                 interp->registers[i]->len, file))
+        goto error;
   }
 
   /* Success */
@@ -2265,5 +2300,6 @@ int main(int argc, char** argv) {
   if (ret == 0)
     write_persistent_registers(&interp, reg_persistence_file);
   /* Done, return status to the OS */
+  interp_destroy(&interp);
   return ret;
 }
