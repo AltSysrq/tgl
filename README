@@ -22,6 +22,7 @@ Options:
   -l, --library file                    Use the given file as the user library
   -r, --register-persistence file       Use the given file for register
                                         persistence
+  -c, --context name                    Specify the current context
   -h, --help                            Display usage information
 
 If infile is not specified, read program from stdin.
@@ -190,7 +191,8 @@ Built-in commands are:
     Alters the current context. The first character after the @ indicates how
     to affect the context, and the characters afterward up to but not including
     the next whitespace indicate what to match. "Match" indicates that the
-    context ends with the given string. Legal values for C are:
+    context matches the glob defined by the string (see fnmatch(3)). Legal
+    values for C are:
       =  Set context activeness to the result of the match
       !  Set context activeness to the negation of the result
       &  Deactivate context if the result is negative
@@ -272,5 +274,5 @@ Resusing the new macro:
   Qnc
 
 Creating a macro to place strings into C-strings (quoting and escaping):
-  @=.h @|.c
+  @=*.h @|*.c
   "cq" (\\(\\)\n(\n)\r(\r)\t(\t)\"(\")\e(\e)\f(\f)\v(\v)8m"\"%\"") D
