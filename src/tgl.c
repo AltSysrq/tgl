@@ -28,6 +28,8 @@
 /* Globals */
 /* The name of the user library file. */
 static char* user_library_file;
+/* The name of the current context. */
+static char* current_context;
 
 /* Versions of malloc and realloc that abort on memory exhaustion. */
 static inline void* tmalloc(size_t size) {
@@ -2205,6 +2207,7 @@ static void print_usage() {
 "                                   for the user library.\n"
 "  -r, --register-persistence file  Use the given file (instead of\n"
 "                                   ~/.tgl_registers) to preserve registers.\n"
+"  -c, --context name               Specify the current context.\n"
 "  -h, --help                       This help message.\n"
     );
 #else
@@ -2212,6 +2215,7 @@ static void print_usage() {
 "  -l file  Use the given file (instead of ~/.tgl) for the user library.\n"
 "  -r file  Use the given file (instead of ~/.tgl_registers) to preserve\n"
 "           registers.\n"
+"  -c name  Specify the current context.\n"
 "  -h       This help message.\n"
     );
 #endif /* _GNU_SOURCE */
@@ -2224,11 +2228,12 @@ int main(int argc, char** argv) {
   char* reg_persistence_file;
   int ret, cmdstat;
   FILE* input;
-  static char short_options[] = "l:r:h";
+  static char short_options[] = "l:r:c:h";
 #ifdef _GNU_SOURCE
   static struct option long_options[] = {
    { "library", 1, NULL, 'l' },
    { "register-persistence", 1, NULL, 'r' },
+   { "context", 1, NULL, 'c' },
    { "help", 0, NULL, 'h' },
    {0},
   };
@@ -2245,6 +2250,7 @@ int main(int argc, char** argv) {
            getenv("HOME"));
   user_library_file = user_library_file_default;
   reg_persistence_file = reg_persistence_file_default;
+  current_context = "";
   input = stdin;
 
   /* Parse command-line arguments */
@@ -2267,6 +2273,10 @@ int main(int argc, char** argv) {
 
     case 'r':
       reg_persistence_file = optarg;
+      break;
+
+    case 'c':
+      current_context = optarg;
       break;
     }
   } while (cmdstat != -1);
