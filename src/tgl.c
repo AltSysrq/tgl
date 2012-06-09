@@ -1,5 +1,8 @@
 /* Main program for TGL (Text Generation Language). */
 
+/* TODO: Have configure define this. */
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,10 +15,14 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#ifdef _GNU_SOURCE
+#include <getopt.h>
+#endif /* _GNU_SOURCE */
 
 #define EXIT_PROGRAM_ERROR 1
 #define EXIT_IO_ERROR 254
 #define EXIT_OUT_OF_MEMORY 255
+#define EXIT_HELP 253
 
 /* Globals */
 /* The name of the user library file. */
@@ -2154,13 +2161,44 @@ static void load_user_library(interpreter* interp) {
     fprintf(stderr, "tgl: error occurred in user library\n");
 }
 
+static void print_usage() {
+  printf("Usage: tgl [options] [infile]\nText Generation Language\n\n");
+#ifdef _GNU_SOURCE
+  printf(
+"  -l, --library file               Use the given file (instead of ~/.tgl)\n"
+"                                   for the user library.\n"
+"  -r, --register-persistence file  Use the given file (instead of\n"
+"                                   ~/.tgl_registers) to preserve registers.\n"
+"  -h, --help                       This help message.\n"
+    );
+#else
+  printf(
+"  -l file  Use the given file (instead of ~/.tgl) for the user library.\n"
+"  -r file  Use the given file (instead of ~/.tgl_registers) to preserve\n"
+"           registers.\n"
+"  -h       This help message.\n"
+    );
+#endif /* _GNU_SOURCE */
+}
+
 int main(int argc, char** argv) {
   interpreter interp;
   char reg_persistence_file_default[256];
   char user_library_file_default[256];
-  int ret;
+  char* reg_persistence_file;
+  int ret, cmdstat;
+  FILE* input;
+  static char short_options[] = "l:r:h";
+#ifdef _GNU_SOURCE
+  static struct option long_options[] = {
+   { "library", 1, NULL, 'l' },
+   { "register-persistence", 1, NULL, 'r' },
+   { "help", 0, NULL, 'h' },
+   {0},
+  };
+#endif /* _GNU_SOURCE */
 
-  /* Init default file names */
+  /* Init default file names and options */
   snprintf(reg_persistence_file_default,
            sizeof(reg_persistence_file_default),
            "%s/.tgl_registers",
@@ -2170,6 +2208,48 @@ int main(int argc, char** argv) {
            "%s/.tgl",
            getenv("HOME"));
   user_library_file = user_library_file_default;
+  reg_persistence_file = reg_persistence_file_default;
+  input = stdin;
+
+  /* Parse command-line arguments */
+  do {
+#ifdef _GNU_SOURCE
+    cmdstat = getopt_long(argc, argv, short_options, long_options, NULL);
+#else
+    cmdstat = getopt(argc, argv, short_options);
+#endif /* not _GNU_SOURCE */
+    switch (cmdstat) {
+    case -1: break;
+    case 'h':
+    case '?':
+      print_usage();
+      return EXIT_HELP;
+
+    case 'l':
+      user_library_file = optarg;
+      break;
+
+    case 'r':
+      reg_persistence_file = optarg;
+      break;
+    }
+  } while (cmdstat != -1);
+
+  /* There should be one or zero args left. */
+  if (argc - optind > 1) {
+    fprintf(stderr, "tgl: too many arguments\n");
+    print_usage();
+    return EXIT_HELP;
+  }
+
+  if (argc - optind) {
+    input = fopen(argv[optind], "r");
+    if (!input) {
+      fprintf(stderr, "tgl: unable to open %s: %s\n",
+              argv[optind], strerror(errno));
+      return EXIT_IO_ERROR;
+    }
+  }
 
   srand(time(NULL));
   interp_init(&interp);
