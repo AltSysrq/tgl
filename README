@@ -27,11 +27,6 @@ Options:
 
 If infile is not specified, read program from stdin.
 
-STATUS
-
-TGL is not yet complete. The following are not yet supported:
-+ Context (@ commands, V command)
-
 BASICS
 
 Every value in TGL is a string. These strings may be pushed onto/popped from a
