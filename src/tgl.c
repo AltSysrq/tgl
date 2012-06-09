@@ -2255,14 +2255,14 @@ int main(int argc, char** argv) {
   interp_init(&interp);
 
   /* Read persistent registers */
-  read_persistent_registers(&interp, reg_persistence_file_default);
+  read_persistent_registers(&interp, reg_persistence_file);
   /* Try to execute the user library */
   load_user_library(&interp);
   /* Execute primary input */
-  ret = exec_file(&interp, stdin, 1, 1);
+  ret = exec_file(&interp, input, 1, 1);
   /* If successful, save registers */
   if (ret == 0)
-    write_persistent_registers(&interp, reg_persistence_file_default);
+    write_persistent_registers(&interp, reg_persistence_file);
   /* Done, return status to the OS */
   return ret;
 }
