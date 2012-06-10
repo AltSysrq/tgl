@@ -187,7 +187,7 @@ int builtin_contextualdefunlibrary(interpreter* interp) {
     break;
 
   case 'e':
-    cxt = convert_string("@=");
+    cxt = convert_string("@=*");
     cxt = append_cstr(cxt, get_context_extension(current_context));
     cxt = append_cstr(cxt, "\n");
     break;
