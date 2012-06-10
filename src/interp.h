@@ -3,6 +3,7 @@
 #define INTERP_H_
 
 #include "strings.h"
+#include "builtins/payload.h"
 
 /* Represents a single stack element. */
 typedef struct stack_elt {
@@ -97,6 +98,9 @@ typedef struct interpreter {
   int enable_history;
   /* The current implicit offset for the h command. */
   unsigned history_offset;
+
+  /* The interpreter's payload data */
+  payload_data payload;
 } interpreter;
 
 /* Pushes the given string onto the stack of the given interpreter.
