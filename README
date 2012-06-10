@@ -177,6 +177,9 @@ Built-in commands are:
       \x##     The character ## (hexadecimal)
     The following sequences result in simply the character being escaped:
       \" \\ \$ \% \` \'
+    The following do nothing (no string is pushed); they are intended for
+    manual balancing:
+      \( \) \[ \] \{ \} \< \>
   #     (number: () -> integer)
     Skips the #, then reads an optional sign followed by digits and pushes the
     resulting integer.

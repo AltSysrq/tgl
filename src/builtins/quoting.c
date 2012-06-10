@@ -30,6 +30,9 @@ int builtin_code(interpreter* interp) {
 
 /* @builtin-decl int builtin_escape(interpreter*) */
 /* @builtin-bind { '\\', builtin_escape }, */
+/* In order to communicate with builtin_string, builtin_escape will return 2 to
+ * indicate it did not push anything.
+ */
 int builtin_escape(interpreter* interp) {
   byte what, x0, x1;
   ++interp->ip;
@@ -39,6 +42,15 @@ int builtin_escape(interpreter* interp) {
   }
 
   switch (curr(interp)) {
+  case '(':
+  case ')':
+  case '[':
+  case ']':
+  case '{':
+  case '}':
+  case '<':
+  case '>': return 2;
+
   case 'a': what = '\a'; break;
   case 'b': what = '\b'; break;
   case 'e': what = '\033'; break;
@@ -104,6 +116,7 @@ int builtin_escape(interpreter* interp) {
 /* @builtin-bind { '"', builtin_string }, */
 int builtin_string(interpreter* interp) {
   string accum, s;
+  int result;
   unsigned begin;
 
   accum = empty_string();
@@ -162,7 +175,9 @@ int builtin_string(interpreter* interp) {
       break;
 
     case '\\':
-      if (!builtin_escape(interp)) goto error;
+      result = builtin_escape(interp);
+      if (!result) goto error;
+      if (result == 2) break; /* Didn't push anything */
       s = stack_pop(interp);
       /* Popping will always succeed if escape returned success. */
       accum = append_string(accum, s);
