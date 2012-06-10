@@ -105,3 +105,35 @@ int builtin_fors(interpreter* interp) {
   free(body);
   return result;
 }
+
+/* @builtin-decl int builtin_each(interpreter*) */
+/* @builtin-bind { 'e', builtin_each }, */
+int builtin_each(interpreter* interp) {
+  string s, sreg, body;
+  unsigned i;
+  int status;
+  byte reg;
+  if (!stack_pop_strings(interp, 3, &body, &sreg, &s)) UNDERFLOW;
+
+  if (sreg->len != 1) {
+    print_error_s("Invalid register", sreg);
+    stack_push(interp, body);
+    stack_push(interp, sreg);
+    stack_push(interp, s);
+  }
+
+  status = 1;
+  reg = string_data(sreg)[0];
+  for (i = 0; i < s->len && status; ++i) {
+    free(interp->registers[reg]);
+    interp->registers[reg] = create_string(string_data(s)+i,
+                                           string_data(s)+i+1);
+    touch_reg(interp, reg);
+    status = exec_code(interp, body);
+  }
+
+  free(body);
+  free(sreg);
+  free(s);
+  return status;
+}

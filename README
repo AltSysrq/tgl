@@ -132,6 +132,8 @@ Built-in commands are:
     (but not including) to.
   F     (short-for: to body -> ???)
     Like for, but assumes the register is "i" and from is "0".
+  e     (each: string reg body -> ???)
+    Executes body with reg set to each character in the given string.
   d     (defun: name body -> ())
     Defines the command of the given name. If it already exists, it is replaced.
     It may be more than one character long. After running this, the command can
