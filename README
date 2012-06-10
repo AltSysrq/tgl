@@ -328,6 +328,8 @@ Payload commands:
         but angles (t<).
       ts (trim-space)
         Like the above, but trims all whitespace. Default true.
+  /?VV  (payload-get-property: () -> value)
+    Pushes the current value of property VV (see above).
   ,s    (payload-space-delimited: () -> ())
     Sets payload to be delimited by whitespace of any kind, combination, and
     amount. Resets balance and trim properties to defaults.
