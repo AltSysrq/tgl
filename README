@@ -214,6 +214,9 @@ Built-in commands are:
     Like v, but the character C is read, which must be s or e. The written code
     is prefixed by context statements to limit any definition to this context
     (s) or file type (e).
+  ,...  (data-payload: varies)
+    Prefix for all data-payload commands. See the DATA PAYLOAD section for
+    details.
 
 REGISTER PERSISTENCE
 
@@ -244,6 +247,98 @@ normal diagnostics are displayed.
 Commands that append to the library surround the appended code with a line feed
 character on either side, and include a "comment" indicating when the insertion
 took place.
+
+PAYLOAD DATA
+
+(NOTE: This is not yet implemented!)
+
+In some cases, it is desirable to take data from a structured source, either
+embedded in the script itself, or extracted from an external source. The ,
+command provides functionality to access and manipulate this payload data.
+
+Most commonly, one includes payload data within the script itself. Usually,
+payload data starts after the text ",$", though the delimiter can be
+changed. By passing the -p (or --prefix-payload) flag, it is also possible to
+include a payload at the beginning of input. In this case, code is considered
+to start after the first ",$" (though initial whitespace still counts within
+the payload). Multiple dollar-signs can be used to include the ",$" within the
+payload; the first occurance that has the greatest number of dollar-signs is
+used to separate the payload and the code.
+
+The first occurrance of a payload-data command which requires access to the
+payload will search for the start-of-payload delimiter (default ",$") in the
+code if no payload is already present.
+
+Payload commands:
+  ,$    (payload-start: () -> ())
+    Moves the instruction pointer to the end of the current code.
+  ,c    (payload-curr: () -> elt)
+    Pushes the string corresponding to the first element of the current payload
+    data onto the stack.
+  ,,    (payload-next: () -> ())
+    Deletes the first element of the current payload data.
+  ,;    (payload-next-kv: () -> ())
+    Deletes the first two elements of the current payload data.
+  ,.    (payload-print: () -> ())
+    Prints the first element of the current payload data, then removes it.
+    Equivalent to ,c.,,
+  ,:    (payload-print-kv: () -> ())
+    Prints the first two elements of the current payload data, separated by the
+    current output-kv-delimiter, then deletes them.
+    Equivalent to ,.,?ok.,.
+  ,r    (payload-read: () -> payload)
+    Pushes the current payload data onto the stack.
+  ,R    (payload-write: payload -> ())
+    Pops the top of the stack into the current payload, discarding its original
+    contents.
+  ,h    (payload-has-more: () -> has-more)
+    Pushes a boolean indicating whether more payload data exists.
+  ,eR   (payload-each: body -> ???)
+    With R set to each consecutive value within the payload, execute body.
+    Equivalent to
+      (,h)(,cRR,, body)w
+  ,EKV  (payload-each-kv: body -> ??)
+    With K set to each consecutive key, and V to each value, execute body.
+    Equivalent to
+      (,h)(,cRK,,,cRV,, body)w
+  ,i    (payload-datum-at-index: index -> value)
+    Pushes the payload element at the given index.
+  ,k    (payload-datum-at-key: key -> value)
+    Pushes the first payload value element with the given key.
+  ,/VV  (payload-set-property: value -> ())
+    Configures the given property to the given string. Legal values for VV:
+      ps (payload-start, default ",$")
+        The delimiter that separates code from payload.
+      vd (value-delimiter, default nonrepresentable)
+        The delimiter that separates values (or keys and values) within the
+        payload. Default is described by ,s.
+      ok (output-kv-delimiter, default ",")
+        The delimiter to use when outputting key-value pairs. Default is ",".
+      b(, b[, b{, b<    (balance-paren)
+        May be set to any legal boolean. When true, delimiters do not split
+        values when the given paren type is unbalanced. When false, the
+        characters have no special meaning. Default is true for all but angles
+        (b<).
+      t(, t[, t{, t<,   (trim-paren)
+        May be set to any legal boolean. When true, outer parens of the given
+        type are stripped (only one level) implicitly. Default is true for all
+        but angles (t<).
+      ts (trim-space)
+        Like the above, but trims all whitespace. Default true.
+  ,s    (payload-space-delimited: () -> ())
+    Sets payload to be delimited by whitespace of any kind, combination, and
+    amount. Resets balance and trim properties to defaults.
+  ,0    (payload-nul-delimited: () -> ())
+    Sets the NUL character as the sole delimiter for payload data, and sets all
+    balance and trim properties to false.
+  ,l    (payload-line-delimited: () -> ())
+    Sets the "\n", "\r", and "\r\n" as value delimeters, and sets all
+    paren-related balancing and trimming to false.
+  ,f    (payload-from-file: filename -> ())
+    Sets the payload data to the contents of the given file.
+  ,F    (payload-from-glob: glob -> ())
+    Sets the payload data to a NUL-delimited list of files matching the given
+    glob, and implicitly executes ",0".
 
 EXAMPLES
 
