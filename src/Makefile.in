@@ -45,7 +45,13 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_tgl_OBJECTS = tgl.$(OBJEXT) strings.$(OBJEXT) interp.$(OBJEXT)
+am__objects_1 = context.$(OBJEXT) logical_ops.$(OBJEXT) \
+	long_command.$(OBJEXT) registers.$(OBJEXT) math_ops.$(OBJEXT) \
+	defun.$(OBJEXT) ctrl_for.$(OBJEXT) quoting.$(OBJEXT) \
+	ctrl_while.$(OBJEXT) ctrl_if.$(OBJEXT) history.$(OBJEXT) \
+	stack_ops.$(OBJEXT) string_ops.$(OBJEXT)
+am_tgl_OBJECTS = tgl.$(OBJEXT) strings.$(OBJEXT) interp.$(OBJEXT) \
+	builtins.$(OBJEXT) $(am__objects_1)
 tgl_OBJECTS = $(am_tgl_OBJECTS)
 tgl_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -147,7 +153,22 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-tgl_SOURCES = tgl.c strings.c interp.c
+BUILTIN_FILES = \
+ builtins/context.c\
+ builtins/logical_ops.c\
+ builtins/long_command.c\
+ builtins/registers.c\
+ builtins/math_ops.c\
+ builtins/defun.c\
+ builtins/ctrl_for.c\
+ builtins/quoting.c\
+ builtins/ctrl_while.c\
+ builtins/ctrl_if.c\
+ builtins/history.c\
+ builtins/stack_ops.c\
+ builtins/string_ops.c
+
+tgl_SOURCES = tgl.c strings.c interp.c builtins.c $(BUILTIN_FILES)
 all: all-am
 
 .SUFFIXES:
@@ -229,7 +250,21 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/builtins.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/context.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctrl_for.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctrl_if.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctrl_while.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/defun.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/history.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/interp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logical_ops.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/long_command.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/math_ops.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/quoting.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/registers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_ops.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/string_ops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strings.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tgl.Po@am__quote@
 
@@ -246,6 +281,188 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+
+context.o: builtins/context.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT context.o -MD -MP -MF $(DEPDIR)/context.Tpo -c -o context.o `test -f 'builtins/context.c' || echo '$(srcdir)/'`builtins/context.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/context.Tpo $(DEPDIR)/context.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/context.c' object='context.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o context.o `test -f 'builtins/context.c' || echo '$(srcdir)/'`builtins/context.c
+
+context.obj: builtins/context.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT context.obj -MD -MP -MF $(DEPDIR)/context.Tpo -c -o context.obj `if test -f 'builtins/context.c'; then $(CYGPATH_W) 'builtins/context.c'; else $(CYGPATH_W) '$(srcdir)/builtins/context.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/context.Tpo $(DEPDIR)/context.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/context.c' object='context.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o context.obj `if test -f 'builtins/context.c'; then $(CYGPATH_W) 'builtins/context.c'; else $(CYGPATH_W) '$(srcdir)/builtins/context.c'; fi`
+
+logical_ops.o: builtins/logical_ops.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT logical_ops.o -MD -MP -MF $(DEPDIR)/logical_ops.Tpo -c -o logical_ops.o `test -f 'builtins/logical_ops.c' || echo '$(srcdir)/'`builtins/logical_ops.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/logical_ops.Tpo $(DEPDIR)/logical_ops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/logical_ops.c' object='logical_ops.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o logical_ops.o `test -f 'builtins/logical_ops.c' || echo '$(srcdir)/'`builtins/logical_ops.c
+
+logical_ops.obj: builtins/logical_ops.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT logical_ops.obj -MD -MP -MF $(DEPDIR)/logical_ops.Tpo -c -o logical_ops.obj `if test -f 'builtins/logical_ops.c'; then $(CYGPATH_W) 'builtins/logical_ops.c'; else $(CYGPATH_W) '$(srcdir)/builtins/logical_ops.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/logical_ops.Tpo $(DEPDIR)/logical_ops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/logical_ops.c' object='logical_ops.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o logical_ops.obj `if test -f 'builtins/logical_ops.c'; then $(CYGPATH_W) 'builtins/logical_ops.c'; else $(CYGPATH_W) '$(srcdir)/builtins/logical_ops.c'; fi`
+
+long_command.o: builtins/long_command.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT long_command.o -MD -MP -MF $(DEPDIR)/long_command.Tpo -c -o long_command.o `test -f 'builtins/long_command.c' || echo '$(srcdir)/'`builtins/long_command.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/long_command.Tpo $(DEPDIR)/long_command.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/long_command.c' object='long_command.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o long_command.o `test -f 'builtins/long_command.c' || echo '$(srcdir)/'`builtins/long_command.c
+
+long_command.obj: builtins/long_command.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT long_command.obj -MD -MP -MF $(DEPDIR)/long_command.Tpo -c -o long_command.obj `if test -f 'builtins/long_command.c'; then $(CYGPATH_W) 'builtins/long_command.c'; else $(CYGPATH_W) '$(srcdir)/builtins/long_command.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/long_command.Tpo $(DEPDIR)/long_command.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/long_command.c' object='long_command.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o long_command.obj `if test -f 'builtins/long_command.c'; then $(CYGPATH_W) 'builtins/long_command.c'; else $(CYGPATH_W) '$(srcdir)/builtins/long_command.c'; fi`
+
+registers.o: builtins/registers.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT registers.o -MD -MP -MF $(DEPDIR)/registers.Tpo -c -o registers.o `test -f 'builtins/registers.c' || echo '$(srcdir)/'`builtins/registers.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/registers.Tpo $(DEPDIR)/registers.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/registers.c' object='registers.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o registers.o `test -f 'builtins/registers.c' || echo '$(srcdir)/'`builtins/registers.c
+
+registers.obj: builtins/registers.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT registers.obj -MD -MP -MF $(DEPDIR)/registers.Tpo -c -o registers.obj `if test -f 'builtins/registers.c'; then $(CYGPATH_W) 'builtins/registers.c'; else $(CYGPATH_W) '$(srcdir)/builtins/registers.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/registers.Tpo $(DEPDIR)/registers.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/registers.c' object='registers.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o registers.obj `if test -f 'builtins/registers.c'; then $(CYGPATH_W) 'builtins/registers.c'; else $(CYGPATH_W) '$(srcdir)/builtins/registers.c'; fi`
+
+math_ops.o: builtins/math_ops.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT math_ops.o -MD -MP -MF $(DEPDIR)/math_ops.Tpo -c -o math_ops.o `test -f 'builtins/math_ops.c' || echo '$(srcdir)/'`builtins/math_ops.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/math_ops.Tpo $(DEPDIR)/math_ops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/math_ops.c' object='math_ops.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o math_ops.o `test -f 'builtins/math_ops.c' || echo '$(srcdir)/'`builtins/math_ops.c
+
+math_ops.obj: builtins/math_ops.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT math_ops.obj -MD -MP -MF $(DEPDIR)/math_ops.Tpo -c -o math_ops.obj `if test -f 'builtins/math_ops.c'; then $(CYGPATH_W) 'builtins/math_ops.c'; else $(CYGPATH_W) '$(srcdir)/builtins/math_ops.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/math_ops.Tpo $(DEPDIR)/math_ops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/math_ops.c' object='math_ops.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o math_ops.obj `if test -f 'builtins/math_ops.c'; then $(CYGPATH_W) 'builtins/math_ops.c'; else $(CYGPATH_W) '$(srcdir)/builtins/math_ops.c'; fi`
+
+defun.o: builtins/defun.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT defun.o -MD -MP -MF $(DEPDIR)/defun.Tpo -c -o defun.o `test -f 'builtins/defun.c' || echo '$(srcdir)/'`builtins/defun.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/defun.Tpo $(DEPDIR)/defun.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/defun.c' object='defun.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o defun.o `test -f 'builtins/defun.c' || echo '$(srcdir)/'`builtins/defun.c
+
+defun.obj: builtins/defun.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT defun.obj -MD -MP -MF $(DEPDIR)/defun.Tpo -c -o defun.obj `if test -f 'builtins/defun.c'; then $(CYGPATH_W) 'builtins/defun.c'; else $(CYGPATH_W) '$(srcdir)/builtins/defun.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/defun.Tpo $(DEPDIR)/defun.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/defun.c' object='defun.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o defun.obj `if test -f 'builtins/defun.c'; then $(CYGPATH_W) 'builtins/defun.c'; else $(CYGPATH_W) '$(srcdir)/builtins/defun.c'; fi`
+
+ctrl_for.o: builtins/ctrl_for.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ctrl_for.o -MD -MP -MF $(DEPDIR)/ctrl_for.Tpo -c -o ctrl_for.o `test -f 'builtins/ctrl_for.c' || echo '$(srcdir)/'`builtins/ctrl_for.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ctrl_for.Tpo $(DEPDIR)/ctrl_for.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/ctrl_for.c' object='ctrl_for.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ctrl_for.o `test -f 'builtins/ctrl_for.c' || echo '$(srcdir)/'`builtins/ctrl_for.c
+
+ctrl_for.obj: builtins/ctrl_for.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ctrl_for.obj -MD -MP -MF $(DEPDIR)/ctrl_for.Tpo -c -o ctrl_for.obj `if test -f 'builtins/ctrl_for.c'; then $(CYGPATH_W) 'builtins/ctrl_for.c'; else $(CYGPATH_W) '$(srcdir)/builtins/ctrl_for.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ctrl_for.Tpo $(DEPDIR)/ctrl_for.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/ctrl_for.c' object='ctrl_for.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ctrl_for.obj `if test -f 'builtins/ctrl_for.c'; then $(CYGPATH_W) 'builtins/ctrl_for.c'; else $(CYGPATH_W) '$(srcdir)/builtins/ctrl_for.c'; fi`
+
+quoting.o: builtins/quoting.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT quoting.o -MD -MP -MF $(DEPDIR)/quoting.Tpo -c -o quoting.o `test -f 'builtins/quoting.c' || echo '$(srcdir)/'`builtins/quoting.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/quoting.Tpo $(DEPDIR)/quoting.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/quoting.c' object='quoting.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o quoting.o `test -f 'builtins/quoting.c' || echo '$(srcdir)/'`builtins/quoting.c
+
+quoting.obj: builtins/quoting.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT quoting.obj -MD -MP -MF $(DEPDIR)/quoting.Tpo -c -o quoting.obj `if test -f 'builtins/quoting.c'; then $(CYGPATH_W) 'builtins/quoting.c'; else $(CYGPATH_W) '$(srcdir)/builtins/quoting.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/quoting.Tpo $(DEPDIR)/quoting.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/quoting.c' object='quoting.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o quoting.obj `if test -f 'builtins/quoting.c'; then $(CYGPATH_W) 'builtins/quoting.c'; else $(CYGPATH_W) '$(srcdir)/builtins/quoting.c'; fi`
+
+ctrl_while.o: builtins/ctrl_while.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ctrl_while.o -MD -MP -MF $(DEPDIR)/ctrl_while.Tpo -c -o ctrl_while.o `test -f 'builtins/ctrl_while.c' || echo '$(srcdir)/'`builtins/ctrl_while.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ctrl_while.Tpo $(DEPDIR)/ctrl_while.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/ctrl_while.c' object='ctrl_while.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ctrl_while.o `test -f 'builtins/ctrl_while.c' || echo '$(srcdir)/'`builtins/ctrl_while.c
+
+ctrl_while.obj: builtins/ctrl_while.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ctrl_while.obj -MD -MP -MF $(DEPDIR)/ctrl_while.Tpo -c -o ctrl_while.obj `if test -f 'builtins/ctrl_while.c'; then $(CYGPATH_W) 'builtins/ctrl_while.c'; else $(CYGPATH_W) '$(srcdir)/builtins/ctrl_while.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ctrl_while.Tpo $(DEPDIR)/ctrl_while.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/ctrl_while.c' object='ctrl_while.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ctrl_while.obj `if test -f 'builtins/ctrl_while.c'; then $(CYGPATH_W) 'builtins/ctrl_while.c'; else $(CYGPATH_W) '$(srcdir)/builtins/ctrl_while.c'; fi`
+
+ctrl_if.o: builtins/ctrl_if.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ctrl_if.o -MD -MP -MF $(DEPDIR)/ctrl_if.Tpo -c -o ctrl_if.o `test -f 'builtins/ctrl_if.c' || echo '$(srcdir)/'`builtins/ctrl_if.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ctrl_if.Tpo $(DEPDIR)/ctrl_if.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/ctrl_if.c' object='ctrl_if.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ctrl_if.o `test -f 'builtins/ctrl_if.c' || echo '$(srcdir)/'`builtins/ctrl_if.c
+
+ctrl_if.obj: builtins/ctrl_if.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ctrl_if.obj -MD -MP -MF $(DEPDIR)/ctrl_if.Tpo -c -o ctrl_if.obj `if test -f 'builtins/ctrl_if.c'; then $(CYGPATH_W) 'builtins/ctrl_if.c'; else $(CYGPATH_W) '$(srcdir)/builtins/ctrl_if.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/ctrl_if.Tpo $(DEPDIR)/ctrl_if.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/ctrl_if.c' object='ctrl_if.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ctrl_if.obj `if test -f 'builtins/ctrl_if.c'; then $(CYGPATH_W) 'builtins/ctrl_if.c'; else $(CYGPATH_W) '$(srcdir)/builtins/ctrl_if.c'; fi`
+
+history.o: builtins/history.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT history.o -MD -MP -MF $(DEPDIR)/history.Tpo -c -o history.o `test -f 'builtins/history.c' || echo '$(srcdir)/'`builtins/history.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/history.Tpo $(DEPDIR)/history.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/history.c' object='history.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o history.o `test -f 'builtins/history.c' || echo '$(srcdir)/'`builtins/history.c
+
+history.obj: builtins/history.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT history.obj -MD -MP -MF $(DEPDIR)/history.Tpo -c -o history.obj `if test -f 'builtins/history.c'; then $(CYGPATH_W) 'builtins/history.c'; else $(CYGPATH_W) '$(srcdir)/builtins/history.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/history.Tpo $(DEPDIR)/history.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/history.c' object='history.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o history.obj `if test -f 'builtins/history.c'; then $(CYGPATH_W) 'builtins/history.c'; else $(CYGPATH_W) '$(srcdir)/builtins/history.c'; fi`
+
+stack_ops.o: builtins/stack_ops.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT stack_ops.o -MD -MP -MF $(DEPDIR)/stack_ops.Tpo -c -o stack_ops.o `test -f 'builtins/stack_ops.c' || echo '$(srcdir)/'`builtins/stack_ops.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/stack_ops.Tpo $(DEPDIR)/stack_ops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/stack_ops.c' object='stack_ops.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o stack_ops.o `test -f 'builtins/stack_ops.c' || echo '$(srcdir)/'`builtins/stack_ops.c
+
+stack_ops.obj: builtins/stack_ops.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT stack_ops.obj -MD -MP -MF $(DEPDIR)/stack_ops.Tpo -c -o stack_ops.obj `if test -f 'builtins/stack_ops.c'; then $(CYGPATH_W) 'builtins/stack_ops.c'; else $(CYGPATH_W) '$(srcdir)/builtins/stack_ops.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/stack_ops.Tpo $(DEPDIR)/stack_ops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/stack_ops.c' object='stack_ops.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o stack_ops.obj `if test -f 'builtins/stack_ops.c'; then $(CYGPATH_W) 'builtins/stack_ops.c'; else $(CYGPATH_W) '$(srcdir)/builtins/stack_ops.c'; fi`
+
+string_ops.o: builtins/string_ops.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT string_ops.o -MD -MP -MF $(DEPDIR)/string_ops.Tpo -c -o string_ops.o `test -f 'builtins/string_ops.c' || echo '$(srcdir)/'`builtins/string_ops.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/string_ops.Tpo $(DEPDIR)/string_ops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/string_ops.c' object='string_ops.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o string_ops.o `test -f 'builtins/string_ops.c' || echo '$(srcdir)/'`builtins/string_ops.c
+
+string_ops.obj: builtins/string_ops.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT string_ops.obj -MD -MP -MF $(DEPDIR)/string_ops.Tpo -c -o string_ops.obj `if test -f 'builtins/string_ops.c'; then $(CYGPATH_W) 'builtins/string_ops.c'; else $(CYGPATH_W) '$(srcdir)/builtins/string_ops.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/string_ops.Tpo $(DEPDIR)/string_ops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='builtins/string_ops.c' object='string_ops.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o string_ops.obj `if test -f 'builtins/string_ops.c'; then $(CYGPATH_W) 'builtins/string_ops.c'; else $(CYGPATH_W) '$(srcdir)/builtins/string_ops.c'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -450,6 +667,9 @@ uninstall-am: uninstall-binPROGRAMS
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-binPROGRAMS
 
+
+builtins.c: $(BUILTIN_FILES)
+	./generate_builtins_c
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
