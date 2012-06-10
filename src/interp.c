@@ -213,6 +213,8 @@ void interp_init(interpreter* interp) {
     interp->commands[(unsigned)builtins[i].name].is_native = 1;
     interp->commands[(unsigned)builtins[i].name].cmd.native = builtins[i].cmd;
   }
+
+  payload_data_init(&interp->payload);
 }
 
 void interp_destroy(interpreter* interp) {
@@ -249,4 +251,6 @@ void interp_destroy(interpreter* interp) {
 
   if (interp->initial_whitespace)
     free(interp->initial_whitespace);
+
+  payload_data_destroy(&interp->payload);
 }

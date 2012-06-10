@@ -323,9 +323,9 @@ Payload commands:
         characters have no special meaning. Default is true for all but angles
         (b<).
       t(, t[, t{, t<,   (trim-paren)
-        May be set to any legal boolean. When true, outer parens of the given
-        type are stripped (only one level) implicitly. Default is true for all
-        but angles (t<).
+        May be set to any legal boolean. When true, matching outer parens of
+        the given type are stripped (only one level) implicitly. Default is
+        true for all but angles (t<).
       ts (trim-space)
         Like the above, but trims all whitespace. Default true.
   /?VV  (payload-get-property: () -> value)

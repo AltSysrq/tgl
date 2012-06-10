@@ -49,7 +49,7 @@ am__objects_1 = context.$(OBJEXT) logical_ops.$(OBJEXT) \
 	long_command.$(OBJEXT) registers.$(OBJEXT) math_ops.$(OBJEXT) \
 	defun.$(OBJEXT) ctrl_for.$(OBJEXT) quoting.$(OBJEXT) \
 	ctrl_while.$(OBJEXT) ctrl_if.$(OBJEXT) history.$(OBJEXT) \
-	stack_ops.$(OBJEXT) string_ops.$(OBJEXT)
+	stack_ops.$(OBJEXT) string_ops.$(OBJEXT) payload.$(OBJEXT)
 am_tgl_OBJECTS = tgl.$(OBJEXT) strings.$(OBJEXT) interp.$(OBJEXT) \
 	builtins.$(OBJEXT) $(am__objects_1)
 tgl_OBJECTS = $(am_tgl_OBJECTS)
@@ -182,7 +182,8 @@ BUILTIN_FILES = \
  builtins/ctrl_if.c\
  builtins/history.c\
  builtins/stack_ops.c\
- builtins/string_ops.c
+ builtins/string_ops.c\
+ builtins/payload.c
 
 tgl_SOURCES = tgl.c strings.c interp.c builtins.c $(BUILTIN_FILES)
 all: all-am
@@ -277,6 +278,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logical_ops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/long_command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/math_ops.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/payload.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/quoting.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/registers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_ops.Po@am__quote@
@@ -479,6 +481,20 @@ string_ops.obj: builtins/string_ops.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builtins/string_ops.c' object='string_ops.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o string_ops.obj `if test -f 'builtins/string_ops.c'; then $(CYGPATH_W) 'builtins/string_ops.c'; else $(CYGPATH_W) '$(srcdir)/builtins/string_ops.c'; fi`
+
+payload.o: builtins/payload.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT payload.o -MD -MP -MF $(DEPDIR)/payload.Tpo -c -o payload.o `test -f 'builtins/payload.c' || echo '$(srcdir)/'`builtins/payload.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/payload.Tpo $(DEPDIR)/payload.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builtins/payload.c' object='payload.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o payload.o `test -f 'builtins/payload.c' || echo '$(srcdir)/'`builtins/payload.c
+
+payload.obj: builtins/payload.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT payload.obj -MD -MP -MF $(DEPDIR)/payload.Tpo -c -o payload.obj `if test -f 'builtins/payload.c'; then $(CYGPATH_W) 'builtins/payload.c'; else $(CYGPATH_W) '$(srcdir)/builtins/payload.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/payload.Tpo $(DEPDIR)/payload.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builtins/payload.c' object='payload.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o payload.obj `if test -f 'builtins/payload.c'; then $(CYGPATH_W) 'builtins/payload.c'; else $(CYGPATH_W) '$(srcdir)/builtins/payload.c'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
