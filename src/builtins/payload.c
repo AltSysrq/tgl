@@ -178,6 +178,10 @@ static int payload_next(interpreter* interp) {
   return 1;
 }
 
+static int payload_next_kv(interpreter* interp) {
+  return payload_next(interp) && payload_next(interp);
+}
+
 static struct {
   byte name;
   native_command command;
@@ -186,6 +190,7 @@ static struct {
   { '$', payload_start },
   { 'c', payload_curr },
   { ',', payload_next },
+  { ';', payload_next_kv },
   {0,0},
 };
 
