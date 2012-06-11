@@ -82,10 +82,54 @@ static int find_delimiter(string delim, string haystack,
   }
 }
 
+/* Sets payload data to that extracted from code, using the current data-start
+ * delimeter. Returns whether extraction succeeded.
+ */
+static int payload_from_code(interpreter* interp) {
+  unsigned eoc, sop;
+  string global_code = interp->payload.global_code;
+
+  if (!global_code) {
+    print_error("Embedded payload not available in this context.");
+    return 0;
+  }
+
+  if (!find_delimiter(interp->payload.data_start_delim,
+                      global_code, &eoc, &sop)) {
+    print_error("No embedded data found");
+    return 0;
+  }
+
+  if (interp->payload.data)
+    free(interp->payload.data);
+
+  interp->payload.data =
+    create_string(string_data(global_code)+sop,
+                  string_data(global_code)+global_code->len);
+  return 1;
+}
+
+/* Automatically extracts embedded payload data if none exists yet.
+ *
+ * Returns 1 on success, 0 if an error occurs.
+ */
+static int auto_payload(interpreter* interp) {
+  if (interp->payload.data) return 1;
+  return payload_from_code(interp);
+}
+
+static int payload_start(interpreter* interp) {
+  /* Jump past payload (to EOT). */
+  interp->ip = interp->code->len;
+  return 1;
+}
+
 static struct {
   byte name;
   native_command command;
 } subcommands[] = {
+  { '!', payload_from_code },
+  { '$', payload_start },
   {0,0},
 };
 

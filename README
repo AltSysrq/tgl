@@ -344,6 +344,10 @@ Payload commands:
   ,F    (payload-from-glob: glob -> ())
     Sets the payload data to a NUL-delimited list of files matching the given
     glob, and implicitly executes ",0".
+  ,!    (payload-from-code: () -> ())
+    Sets the payload data to that executed from the global-level code. This is
+    done automatically if the payload data is executed when none has been
+    extracted, though it can be used to reset the data to this.
 
 EXAMPLES
 
