@@ -10,7 +10,7 @@
 #include "payload.h"
 
 void payload_data_init(payload_data* p) {
-  p->data = p->global_code = NULL;
+  p->data = p->data_base = p->global_code = NULL;
   p->data_start_delim = convert_string(",$");
   p->value_delim = PAYLOAD_WS_DELIM;
   p->output_kv_delim = convert_string(",");
@@ -21,7 +21,7 @@ void payload_data_init(payload_data* p) {
 }
 
 void payload_data_destroy(payload_data* p) {
-  if (p->data) free(p->data);
+  if (p->data) free(p->data_base);
   if (p->data_start_delim > PAYLOAD_LINE_DELIM)
     free(p->data_start_delim);
   if (p->value_delim > PAYLOAD_LINE_DELIM)
@@ -116,9 +116,9 @@ static int payload_from_code(interpreter* interp) {
   }
 
   if (interp->payload.data)
-    free(interp->payload.data);
+    free(interp->payload.data_base);
 
-  interp->payload.data =
+  interp->payload.data = interp->payload.data_base =
     create_string(string_data(global_code)+sop,
                   string_data(global_code)+global_code->len);
   return 1;
@@ -172,9 +172,7 @@ static int payload_next(interpreter* interp) {
   }
 
   find_opt_delim(interp->payload.value_delim, DATA, NULL, &begin);
-  /* Instead of reallocating, just move the data */
-  DATA->len -= begin;
-  memmove(string_data(DATA), string_data(DATA)+begin, DATA->len);
+  DATA = string_advance(DATA, begin);
   return 1;
 }
 

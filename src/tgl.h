@@ -17,6 +17,8 @@
 extern char* user_library_file;
 /* The name of the current context. */
 extern char* current_context;
+/* If set to true, don't emit a warning when architecture detection fails. */
+extern int suppress_unknown_alignment_warning;
 
 /* Versions of malloc and realloc that abort on memory exhaustion. */
 static inline void* tmalloc(size_t size) {

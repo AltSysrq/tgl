@@ -77,4 +77,18 @@ string int_to_string(signed);
  */
 char* get_context_extension(char* context);
 
+/* Advances the head of the given string by the given number of characters,
+ * destroying the contents before the new head. Only sizeof(struct string)
+ * bytes must be copied for this operation. The original pointer must be kept
+ * to pass to free() later.
+ *
+ * On systems that require memory alignment, a more traditional mass-move is
+ * performed if advancement would result in a non-aligned head. Because of
+ * this, the caller must not relay on any particular relocation of the head.
+ *
+ * Whether memory alignment is required is determined the first time the
+ * function is invoked.
+ */
+string string_advance(string, unsigned);
+
 #endif /* STRINGS_H_ */

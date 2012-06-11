@@ -26,6 +26,7 @@
 #include "interp.h"
 
 char* user_library_file, * current_context;
+int suppress_unknown_alignment_warning;
 
 /* BEGIN: Persistence */
 
@@ -320,6 +321,7 @@ static void print_usage() {
 "  -r, --register-persistence file  Use the given file (instead of\n"
 "                                   ~/.tgl_registers) to preserve registers.\n"
 "  -c, --context name               Specify the current context.\n"
+/* -A doesn't need to be shown here. */
 "  -h, --help                       This help message.\n"
     );
 #else
@@ -328,6 +330,7 @@ static void print_usage() {
 "  -r file  Use the given file (instead of ~/.tgl_registers) to preserve\n"
 "           registers.\n"
 "  -c name  Specify the current context.\n"
+/* -A doesn't need to be shown here. */
 "  -h       This help message.\n"
     );
 #endif /* _GNU_SOURCE */
@@ -340,12 +343,13 @@ int main(int argc, char** argv) {
   char* reg_persistence_file;
   int ret, cmdstat;
   FILE* input;
-  static char short_options[] = "l:r:c:h";
+  static char short_options[] = "l:r:c:Ah";
 #ifdef _GNU_SOURCE
   static struct option long_options[] = {
    { "library", 1, NULL, 'l' },
    { "register-persistence", 1, NULL, 'r' },
    { "context", 1, NULL, 'c' },
+   { "suppress-alignment-warning", 0, NULL, 'A' },
    { "help", 0, NULL, 'h' },
    {0},
   };
@@ -389,6 +393,10 @@ int main(int argc, char** argv) {
 
     case 'c':
       current_context = optarg;
+      break;
+
+    case 'A':
+      suppress_unknown_alignment_warning = 1;
       break;
     }
   } while (cmdstat != -1);

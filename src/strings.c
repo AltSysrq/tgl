@@ -4,6 +4,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include "tgl.h"
 #include "strings.h"
@@ -164,4 +165,80 @@ char* get_context_extension(char* cxt) {
   len = strlen(cxt);
   for (ret = cxt+len; ret != cxt && *ret != '.'; --ret);
   return ret;
+}
+
+/* Indicates whether memory alignment is required on the current machine.
+ * C initialises globals to 0, which means Untested is default.
+ */
+static volatile enum { Untested=0, Not_Required, Required } alignment_required;
+
+/* SIGSEGV handler called when the alignment test fails. */
+static void architecture_requires_alignment(int since_when_is_a_name_required) {
+  alignment_required = Required;
+}
+
+string string_advance(string s, unsigned amt) {
+  void (*old_handler)(int);
+#ifdef SIGBUS
+  void (*old_bus_handler)(int);
+#endif
+  unsigned len;
+  int test[2], *testptr;
+
+  if (alignment_required == Untested) {
+    testptr = (int*)(((char*)test)+1);
+    old_handler = signal(SIGSEGV, architecture_requires_alignment);
+#ifdef SIGBUS
+    old_bus_handler = signal(SIGBUS, architecture_requires_alignment);
+#endif
+    if (old_handler == SIG_ERR
+#ifdef SIGBUS
+        || old_bus_handler == SIG_ERR
+#endif
+      ) {
+      if (!suppress_unknown_alignment_warning) {
+        fprintf(stderr,
+                "tgl: warning: could not determine whether memory"
+                "alignment is reqired\n"
+                "signal: %s\n", strerror(errno));
+        fprintf(stderr, "Pass -A to suppress this warning.\n");
+      }
+
+      /* Assume aligned to be safe */
+      alignment_required = Required;
+      /* Restore any successfully changed signal(s) */
+      if (old_handler != SIG_ERR)
+        signal(SIGSEGV, old_handler);
+#ifdef SIGBUS
+      if (old_bus_handler != SIG_ERR)
+        signal(SIGBUS, old_bus_handler);
+#endif
+    } else {
+      /* Set to not required; if SIGSEGV occurs, set to required. */
+      alignment_required = Not_Required;
+      ++*testptr;
+      /* Restore old signal handler */
+      signal(SIGSEGV, old_handler);
+#ifdef SIGBUS
+      signal(SIGBUS, old_bus_handler);
+#endif
+    }
+  }
+
+  /* Use the fast method if alignment is not required, or if the movement is
+   * aligned.
+   */
+  if (amt % sizeof(void*) == 0 || alignment_required == Not_Required) {
+    /* Store new length */
+    len = s->len - amt;
+    /* Move string head */
+    s = (string)(((char*)s)+amt);
+    /* Write length back */
+    s->len = len;
+  } else {
+    s->len -= amt;
+    memmove(string_data(s), string_data(s)+amt, s->len);
+  }
+
+  return s;
 }

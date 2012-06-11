@@ -16,6 +16,8 @@ typedef struct payload_data {
    * not owned by this object.
    */
   string data, global_code;
+  /* The free()able base pointer for data. */
+  string data_base;
   /* Properties.
    * Note that delimiters might not be valid pointers; see PAYLOAD_LINE_DELIM
    * and PAYLOAD_WS_DELIM.
