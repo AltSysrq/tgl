@@ -178,8 +178,29 @@ static int payload_next(interpreter* interp) {
   return 1;
 }
 
+extern int builtin_print(interpreter* interp);
+static int payload_print(interpreter* interp) {
+  return payload_curr(interp) && builtin_print(interp) &&
+    payload_next(interp);
+}
+
 static int payload_next_kv(interpreter* interp) {
   return payload_next(interp) && payload_next(interp);
+}
+
+static int payload_print_kv(interpreter* interp) {
+  if (!payload_print(interp)) return 0;
+
+  if (interp->payload.output_kv_delim == PAYLOAD_LINE_DELIM)
+    stack_push(interp, convert_string("\n"));
+  else if (interp->payload.output_kv_delim == PAYLOAD_WS_DELIM)
+    stack_push(interp, convert_string(" "));
+  else
+    stack_push(interp, dupe_string(interp->payload.output_kv_delim));
+
+  if (!builtin_print(interp)) return 0;
+
+  return payload_print(interp);
 }
 
 static struct {
@@ -191,6 +212,8 @@ static struct {
   { 'c', payload_curr },
   { ',', payload_next },
   { ';', payload_next_kv },
+  { '.', payload_print },
+  { ':', payload_print_kv },
   {0,0},
 };
 
