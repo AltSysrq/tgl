@@ -82,6 +82,21 @@ static int find_delimiter(string delim, string haystack,
   }
 }
 
+/* Like find_delimiter, but uses the whole string if no delimiter is found.
+ * Either bounding argument may be null.
+ */
+static int find_opt_delim(string delim, string haystack,
+                          unsigned* left, unsigned* right) {
+  unsigned sl, sr;
+  if (!left) left = &sl;
+  if (!right) right = &sr;
+
+  *left = haystack->len;
+  *right = haystack->len;
+  find_delimiter(delim, haystack, left, right);
+  return 1;
+}
+
 /* Sets payload data to that extracted from code, using the current data-start
  * delimeter. Returns whether extraction succeeded.
  */
@@ -118,9 +133,48 @@ static int auto_payload(interpreter* interp) {
   return payload_from_code(interp);
 }
 
+/* Automatically call auto_payload and return failure if it fails. */
+#define AUTO do { if (!auto_payload(interp)) return 0; } while (0)
+
+/* Shortcut for accessing interp->payload.data */
+#define DATA interp->payload.data
+
 static int payload_start(interpreter* interp) {
   /* Jump past payload (to EOT). */
   interp->ip = interp->code->len;
+  return 1;
+}
+
+static int payload_curr(interpreter* interp) {
+  unsigned end;
+
+  AUTO;
+
+  if (!DATA->len) {
+    print_error("No current item");
+    return 0;
+  }
+
+  find_opt_delim(interp->payload.value_delim, DATA, &end, NULL);
+  stack_push(interp, create_string(string_data(DATA),
+                                   string_data(DATA)+end));
+  return 1;
+}
+
+static int payload_next(interpreter* interp) {
+  unsigned begin;
+
+  AUTO;
+
+  if (!DATA->len) {
+    print_error("No next item");
+    return 0;
+  }
+
+  find_opt_delim(interp->payload.value_delim, DATA, NULL, &begin);
+  /* Instead of reallocating, just move the data */
+  DATA->len -= begin;
+  memmove(string_data(DATA), string_data(DATA)+begin, DATA->len);
   return 1;
 }
 
@@ -130,6 +184,8 @@ static struct {
 } subcommands[] = {
   { '!', payload_from_code },
   { '$', payload_start },
+  { 'c', payload_curr },
+  { ',', payload_next },
   {0,0},
 };
 
