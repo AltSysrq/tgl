@@ -210,11 +210,15 @@ static int write_persistent_registers(interpreter* interp, char* filename) {
  * If enable_history is non-zero, the interpreter's enable_history attribute
  * will be set and honoured when it finishes successfully.
  *
+ * If set_global_code is true, the global_code of the payload data is set to
+ * the executing code, and reset to NULL on return.
+ *
  * Returns an exit code.
  */
 static int exec_file(interpreter* interp, FILE* file,
                      int scan_initial_whitespace,
-                     int enable_history) {
+                     int enable_history,
+                     int set_global_code) {
   string input;
   char buffer[1024];
   unsigned len, i;
@@ -241,8 +245,15 @@ static int exec_file(interpreter* interp, FILE* file,
     interp->initial_whitespace = create_string(string_data(input),
                                                string_data(input)+i);
   }
+
+  if (set_global_code)
+    interp->payload.global_code = input;
+
   if (!exec_code(interp, input))
     status = EXIT_PROGRAM_ERROR;
+
+  if (set_global_code)
+    interp->payload.global_code = NULL;
 
   /* Add to history if appropriate */
   if (enable_history && interp->enable_history && status == 0) {
@@ -287,7 +298,7 @@ static void load_user_library(interpreter* interp) {
     return;
   }
 
-  status = exec_file(interp, file, 0, 0);
+  status = exec_file(interp, file, 0, 0, 0);
   fclose(file);
 
   /* Clear the stack and reset history offset */
@@ -406,7 +417,7 @@ int main(int argc, char** argv) {
   /* Try to execute the user library */
   load_user_library(&interp);
   /* Execute primary input */
-  ret = exec_file(&interp, input, 1, 1);
+  ret = exec_file(&interp, input, 1, 1, 1);
   /* If successful, save registers */
   if (ret == 0)
     write_persistent_registers(&interp, reg_persistence_file);
