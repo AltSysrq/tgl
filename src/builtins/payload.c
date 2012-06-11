@@ -201,6 +201,25 @@ static int payload_print_kv(interpreter* interp) {
   return payload_print(interp);
 }
 
+static int payload_read(interpreter* interp) {
+  AUTO;
+
+  stack_push(interp, dupe_string(DATA));
+  return 1;
+}
+
+static int payload_write(interpreter* interp) {
+  string s;
+  if (DATA)
+    free(interp->payload.data_base);
+
+  if (!(s = stack_pop(interp))) UNDERFLOW;
+
+  DATA = interp->payload.data_base = dupe_string(s);
+  free(s);
+  return 1;
+}
+
 static struct {
   byte name;
   native_command command;
@@ -212,6 +231,8 @@ static struct {
   { ';', payload_next_kv },
   { '.', payload_print },
   { ':', payload_print_kv },
+  { 'r', payload_read },
+  { 'R', payload_write },
   {0,0},
 };
 
