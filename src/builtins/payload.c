@@ -35,16 +35,61 @@ string payload_extract_prefix(string code, payload_data* p) {
   return code;
 }
 
+/* If the character at *ix is an opening parenthesis character and that type is
+ * set to be balanced according to the given payload, advance the index to the
+ * matching closing character or to the end of string and return 1. Otherwise,
+ * return 0.
+ */
+static int balance_parens(unsigned* ix, string str, payload_data* payload) {
+  byte curr, closing;
+  if (*ix >= str->len) return 0;
+
+  curr = string_data(str)[*ix];
+  switch (curr) {
+  case '{':
+    if (!payload->balance_brace) return 0;
+    closing = '}';
+    break;
+
+  case '(':
+    if (!payload->balance_paren) return 0;
+    closing = ')';
+    break;
+
+  case '[':
+    if (!payload->balance_brack) return 0;
+    closing = ']';
+    break;
+
+  case '<':
+    if (!payload->balance_angle) return 0;
+    closing = '>';
+    break;
+
+  default:
+    /* Not a paren-char */
+    return 0;
+  }
+
+  /* If we get here, we must balance. */
+  for (++*ix; *ix < str->len && string_data(str)[*ix] != closing; ++*ix)
+    balance_parens(ix, str, payload);
+
+  return 1;
+}
+
 /* Searches for the given delimiter within the given strings. On success, sets
  * left to one plus the index of the last character of the LHS, and right to
  * the index of the first character of the RHS. On failure, left and right are
  * unmodified. Returns whether the delimiter was found.
  */
 static int find_delimiter(string delim, string haystack,
-                          unsigned* left, unsigned* right) {
+                          unsigned* left, unsigned* right,
+                          payload_data* payload) {
   unsigned i, j;
   if (delim == PAYLOAD_WS_DELIM) {
-    for (i = 0; i < haystack->len && !isspace(string_data(haystack)[i]); ++i);
+    for (i = 0; i < haystack->len && !isspace(string_data(haystack)[i]); ++i)
+      balance_parens(&i, haystack, payload);
     for (j = i; j < haystack->len &&  isspace(string_data(haystack)[j]); ++j);
     if (i == j)
       /* No delimiter found */
@@ -56,7 +101,8 @@ static int find_delimiter(string delim, string haystack,
     return 1;
   } else if (delim == PAYLOAD_LINE_DELIM) {
     for (i = 0; i < haystack->len && string_data(haystack)[i] != '\n' &&
-           string_data(haystack)[i] != '\r'; ++i);
+           string_data(haystack)[i] != '\r'; ++i)
+      balance_parens(&i, haystack, payload);
     if (i == haystack->len) return 0;
 
     /* OK */
@@ -67,6 +113,7 @@ static int find_delimiter(string delim, string haystack,
   } else {
     /* Why can't there be memmem() like strstr()? */
     for (i = 0; i <= haystack->len - delim->len; ++i) {
+      if (balance_parens(&i, haystack, payload)) continue;
       for (j = 0; j < delim->len &&
              string_data(haystack)[i+j] == string_data(delim)[j]; ++j);
       if (j == delim->len) {
@@ -86,14 +133,15 @@ static int find_delimiter(string delim, string haystack,
  * Either bounding argument may be null.
  */
 static int find_opt_delim(string delim, string haystack,
-                          unsigned* left, unsigned* right) {
+                          unsigned* left, unsigned* right,
+                          payload_data* payload) {
   unsigned sl, sr;
   if (!left) left = &sl;
   if (!right) right = &sr;
 
   *left = haystack->len;
   *right = haystack->len;
-  find_delimiter(delim, haystack, left, right);
+  find_delimiter(delim, haystack, left, right, payload);
   return 1;
 }
 
@@ -110,7 +158,7 @@ static int payload_from_code(interpreter* interp) {
   }
 
   if (!find_delimiter(interp->payload.data_start_delim,
-                      global_code, &eoc, &sop)) {
+                      global_code, &eoc, &sop, &interp->payload)) {
     print_error("No embedded data found");
     return 0;
   }
@@ -155,7 +203,8 @@ static int payload_curr(interpreter* interp) {
     return 0;
   }
 
-  find_opt_delim(interp->payload.value_delim, DATA, &end, NULL);
+  find_opt_delim(interp->payload.value_delim, DATA, &end, NULL,
+                 &interp->payload);
   stack_push(interp, create_string(string_data(DATA),
                                    string_data(DATA)+end));
   return 1;
@@ -171,7 +220,8 @@ static int payload_next(interpreter* interp) {
     return 0;
   }
 
-  find_opt_delim(interp->payload.value_delim, DATA, NULL, &begin);
+  find_opt_delim(interp->payload.value_delim, DATA, NULL, &begin,
+                 &interp->payload);
   DATA = string_advance(DATA, begin);
   return 1;
 }
