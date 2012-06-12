@@ -185,6 +185,8 @@ static int find_opt_delim(string delim, string haystack,
   return 1;
 }
 
+static void set_payload(interpreter* interp, string data);
+
 /* Sets payload data to that extracted from code, using the current data-start
  * delimeter. Returns whether extraction succeeded.
  */
@@ -203,12 +205,9 @@ static int payload_from_code(interpreter* interp) {
     return 0;
   }
 
-  if (interp->payload.data)
-    free(interp->payload.data_base);
-
-  interp->payload.data = interp->payload.data_base =
-    create_string(string_data(global_code)+sop,
-                  string_data(global_code)+global_code->len);
+  set_payload(interp,
+              create_string(string_data(global_code)+sop,
+                            string_data(global_code)+global_code->len));
   return 1;
 }
 
@@ -310,6 +309,24 @@ static int payload_write(interpreter* interp) {
   DATA = interp->payload.data_base = dupe_string(s);
   free(s);
   return 1;
+}
+
+/* Automatically replaces the interpreter's current payload, and performs any
+ * implicit skipping needed.
+ */
+static void set_payload(interpreter* interp, string payload) {
+  if (DATA)
+    free(interp->payload.data_base);
+
+  interp->payload.data = interp->payload.data_base = payload;
+  /* Implicit skipping */
+  if (DATA->len) {
+    if ((isspace(string_data(DATA)[0]) &&
+         interp->payload.value_delim == PAYLOAD_WS_DELIM) ||
+        (('\n' == string_data(DATA)[0] || '\r' == string_data(DATA)[0]) &&
+         interp->payload.value_delim == PAYLOAD_LINE_DELIM))
+      payload_next(interp);
+  }
 }
 
 static struct {
