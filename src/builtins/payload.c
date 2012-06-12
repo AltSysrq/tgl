@@ -314,6 +314,7 @@ static int payload_write(interpreter* interp) {
 static int payload_set_property(interpreter* interp) {
   byte pa, pb;
   string value;
+  string* delim;
 
   ++interp->ip;
   if (!is_ip_valid(interp)) {
@@ -336,25 +337,16 @@ static int payload_set_property(interpreter* interp) {
 #define S(a,b) (((unsigned)(a)<<8)|(b))
   switch (S(pa,pb)) {
   case S('p','s'):
-    if (interp->payload.data_start_delim > PAYLOAD_LINE_DELIM)
-      free(interp->payload.data_start_delim);
-
-    interp->payload.data_start_delim = value;
-    break;
+    delim = &interp->payload.data_start_delim;
+    goto set_delim;
 
   case S('v','d'):
-    if (interp->payload.value_delim > PAYLOAD_LINE_DELIM)
-      free(interp->payload.value_delim);
-
-    interp->payload.value_delim = value;
-    break;
+    delim = &interp->payload.value_delim;
+    goto set_delim;
 
   case S('o','k'):
-    if (interp->payload.output_kv_delim > PAYLOAD_LINE_DELIM)
-      free(interp->payload.output_kv_delim);
-
-    interp->payload.output_kv_delim = value;
-    break;
+    delim = &interp->payload.output_kv_delim;
+    goto set_delim;
 
   case S('b','('):
     interp->payload.balance_paren = string_to_bool_free(value);
@@ -400,6 +392,112 @@ static int payload_set_property(interpreter* interp) {
 #undef S
 
   return 1;
+
+  set_delim:
+  if (*delim > PAYLOAD_LINE_DELIM)
+    free(*delim);
+
+  if (value->len == 2 &&
+      !memcmp("ws", string_data(value), 2)) {
+    free(value);
+    value = PAYLOAD_WS_DELIM;
+  } else if (value->len == 2 &&
+             !memcmp("lf", string_data(value), 2)) {
+    free(value);
+    value = PAYLOAD_LINE_DELIM;
+  }
+
+  *delim = value;
+  return 1;
+}
+
+static int payload_get_property(interpreter* interp) {
+  byte pa, pb;
+  string delim;
+  int boolean;
+
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Missing property name following ,/");
+    return 0;
+  }
+  pa = curr(interp);
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Second property name character missing");
+    return 0;
+  }
+  pb = curr(interp);
+
+#define S(a,b) (((unsigned)(a)<<8)|(b))
+  switch (S(pa, pb)) {
+  case S('p','s'):
+    delim = interp->payload.data_start_delim;
+    goto get_delim;
+
+  case S('v','d'):
+    delim = interp->payload.value_delim;
+    goto get_delim;
+
+  case S('o','k'):
+    delim = interp->payload.output_kv_delim;
+    goto get_delim;
+
+  case S('b','('):
+    boolean = interp->payload.balance_paren;
+    goto get_bool;
+
+  case S('b','['):
+    boolean = interp->payload.balance_brack;
+    goto get_bool;
+
+  case S('b','{'):
+    boolean = interp->payload.balance_brace;
+    goto get_bool;
+
+  case S('b','<'):
+    boolean = interp->payload.balance_angle;
+    goto get_bool;
+
+  case S('t','('):
+    boolean = interp->payload.trim_paren;
+    goto get_bool;
+
+  case S('t','['):
+    boolean = interp->payload.trim_brack;
+    goto get_bool;
+
+  case S('t','{'):
+    boolean = interp->payload.trim_brace;
+    goto get_bool;
+
+  case S('t','<'):
+    boolean = interp->payload.trim_angle;
+    goto get_bool;
+
+  case S('t','s'):
+    boolean = interp->payload.trim_space;
+    goto get_bool;
+
+  default:
+    print_error("Unrecognised property");
+    return 0;
+  }
+#undef S
+
+  get_delim:
+  if (delim == PAYLOAD_WS_DELIM)
+    delim = convert_string("ws");
+  else if (delim == PAYLOAD_LINE_DELIM)
+    delim = convert_string("lf");
+  else
+    delim = dupe_string(delim);
+  stack_push(interp, delim);
+  return 1;
+
+  get_bool:
+  stack_push(interp, int_to_string(boolean));
+  return 1;
 }
 
 /* Automatically replaces the interpreter's current payload, and performs any
@@ -434,6 +532,7 @@ static struct {
   { 'r', payload_read },
   { 'R', payload_write },
   { '/', payload_set_property },
+  { '?', payload_get_property },
   {0,0},
 };
 

@@ -334,7 +334,8 @@ Payload commands:
     Sets payload to be delimited by whitespace of any kind, combination, and
     amount. Resets balance and trim properties to defaults. If this mode is in
     use when payload is first extracted (or with ,!), leading space in the
-    payload is skipped.
+    payload is skipped. This can be indicated in generic properties with the
+    special string "ws".
   ,0    (payload-nul-delimited: () -> ())
     Sets the NUL character as the sole delimiter for payload data, and sets all
     balance and trim properties to false.
@@ -342,7 +343,8 @@ Payload commands:
     Sets the "\n", "\r", and "\r\n" as value delimeters, and sets all
     paren-related balancing and trimming to false. If this mode is in use when
     the payload is first extracted (or with ,!), leading line feeds in the
-    payload are skipped.
+    payload are skipped. This can be indicated in generic properties with the
+    special string "lf".
   ,f    (payload-from-file: filename -> ())
     Sets the payload data to the contents of the given file.
   ,F    (payload-from-glob: glob -> ())
