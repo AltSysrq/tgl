@@ -311,6 +311,97 @@ static int payload_write(interpreter* interp) {
   return 1;
 }
 
+static int payload_set_property(interpreter* interp) {
+  byte pa, pb;
+  string value;
+
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Missing property name following ,/");
+    return 0;
+  }
+  pa = curr(interp);
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Second property name character missing");
+    return 0;
+  }
+  pb = curr(interp);
+
+  if (!(value = stack_pop(interp))) UNDERFLOW;
+
+  /* Macro to combine characters into 16-bit integers for the switch statement
+   * below.
+   */
+#define S(a,b) (((unsigned)(a)<<8)|(b))
+  switch (S(pa,pb)) {
+  case S('p','s'):
+    if (interp->payload.data_start_delim > PAYLOAD_LINE_DELIM)
+      free(interp->payload.data_start_delim);
+
+    interp->payload.data_start_delim = value;
+    break;
+
+  case S('v','d'):
+    if (interp->payload.value_delim > PAYLOAD_LINE_DELIM)
+      free(interp->payload.value_delim);
+
+    interp->payload.value_delim = value;
+    break;
+
+  case S('o','k'):
+    if (interp->payload.output_kv_delim > PAYLOAD_LINE_DELIM)
+      free(interp->payload.output_kv_delim);
+
+    interp->payload.output_kv_delim = value;
+    break;
+
+  case S('b','('):
+    interp->payload.balance_paren = string_to_bool_free(value);
+    break;
+
+  case S('b','['):
+    interp->payload.balance_brack = string_to_bool_free(value);
+    break;
+
+  case S('b','{'):
+    interp->payload.balance_brace = string_to_bool_free(value);
+    break;
+
+  case S('b','<'):
+    interp->payload.balance_angle = string_to_bool_free(value);
+    break;
+
+  case S('t','('):
+    interp->payload.trim_paren = string_to_bool_free(value);
+    break;
+
+  case S('t','['):
+    interp->payload.trim_brack = string_to_bool_free(value);
+    break;
+
+  case S('t','{'):
+    interp->payload.trim_brace = string_to_bool_free(value);
+    break;
+
+  case S('t','<'):
+    interp->payload.trim_angle = string_to_bool_free(value);
+    break;
+
+  case S('t','s'):
+    interp->payload.trim_space = string_to_bool_free(value);
+    break;
+
+  default:
+    print_error("Unrecognised property");
+    stack_push(interp, value);
+    return 0;
+  }
+#undef S
+
+  return 1;
+}
+
 /* Automatically replaces the interpreter's current payload, and performs any
  * implicit skipping needed.
  */
@@ -342,6 +433,7 @@ static struct {
   { ':', payload_print_kv },
   { 'r', payload_read },
   { 'R', payload_write },
+  { '/', payload_set_property },
   {0,0},
 };
 
