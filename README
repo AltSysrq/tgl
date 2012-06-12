@@ -294,8 +294,10 @@ Payload commands:
   ,R    (payload-write: payload -> ())
     Pops the top of the stack into the current payload, discarding its original
     contents.
-  ,h    (payload-has-more: () -> has-more)
-    Pushes a boolean indicating whether more payload data exists.
+  ,h    (payload-length-bytes: () -> byte-count)
+    Pushes an integer indicating how many bytes are left in the current payload
+    data. No values remain if and only if this command returns zero. (Thus the
+    mnemonic Has-more.)
   ,eR   (payload-each: body -> ???)
     With R set to each consecutive value within the payload, execute body.
     Equivalent to

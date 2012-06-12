@@ -500,6 +500,13 @@ static int payload_get_property(interpreter* interp) {
   return 1;
 }
 
+static int payload_length_bytes(interpreter* interp) {
+  AUTO;
+
+  stack_push(interp, int_to_string(DATA->len));
+  return 1;
+}
+
 /* Automatically replaces the interpreter's current payload, and performs any
  * implicit skipping needed.
  */
@@ -533,6 +540,7 @@ static struct {
   { 'R', payload_write },
   { '/', payload_set_property },
   { '?', payload_get_property },
+  { 'h', payload_length_bytes },
   {0,0},
 };
 
