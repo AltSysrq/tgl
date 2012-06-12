@@ -17,7 +17,7 @@ void payload_data_init(payload_data* p) {
   p->balance_paren = p->balance_brack = p->balance_brace = 1;
   p->trim_paren = p->trim_brack = p->trim_brace = 1;
   p->balance_angle = p->trim_angle = 0;
-  p->trim_space = 0;
+  p->trim_space = 1;
 }
 
 void payload_data_destroy(payload_data* p) {
