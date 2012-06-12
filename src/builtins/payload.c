@@ -78,6 +78,46 @@ static int balance_parens(unsigned* ix, string str, payload_data* payload) {
   return 1;
 }
 
+/* Trims extraneous characters from the given string, returning a possibly new
+ * string with the characters removed. The old string is destroyed or returned.
+ */
+static string payload_trim(string orig_str, payload_data* payload) {
+  string s = orig_str;
+  unsigned i;
+  byte start, end;
+
+  /* Whitespace */
+  if (payload->trim_space) {
+    /* Trailing */
+    while (s->len > 0 && isspace(string_data(s)[s->len-1]))
+      --s->len;
+    /* Leading */
+    for (i = 0; i < s->len && isspace(string_data(s)[i]); ++i);
+    s = string_advance(s, i);
+  }
+
+  /* Parens */
+  if (s->len >= 2) {
+    start = string_data(s)[0];
+    end = string_data(s)[s->len - 1];
+    if (payload->trim_brace && start == '{' && end == '}' ||
+        payload->trim_brack && start == '[' && end == ']' ||
+        payload->trim_paren && start == '(' && end == ')' ||
+        payload->trim_angle && start == '<' && end == '>') {
+      --s->len;
+      s = string_advance(s, 1);
+    }
+  }
+
+  if (s != orig_str) {
+    /* Head not preserved, must return duplicate. */
+    s = dupe_string(s);
+    free(orig_str);
+  }
+
+  return s;
+}
+
 /* Searches for the given delimiter within the given strings. On success, sets
  * left to one plus the index of the last character of the LHS, and right to
  * the index of the first character of the RHS. On failure, left and right are
@@ -205,8 +245,10 @@ static int payload_curr(interpreter* interp) {
 
   find_opt_delim(interp->payload.value_delim, DATA, &end, NULL,
                  &interp->payload);
-  stack_push(interp, create_string(string_data(DATA),
-                                   string_data(DATA)+end));
+  stack_push(interp,
+             payload_trim(create_string(string_data(DATA),
+                                        string_data(DATA)+end),
+                          &interp->payload));
   return 1;
 }
 

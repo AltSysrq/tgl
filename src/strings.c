@@ -185,6 +185,8 @@ string string_advance(string s, unsigned amt) {
   unsigned len;
   int test[2], *testptr;
 
+  if (!amt) return s; /* Nothing to do */
+
   if (alignment_required == Untested) {
     testptr = (int*)(((char*)test)+1);
     old_handler = signal(SIGSEGV, architecture_requires_alignment);
