@@ -347,7 +347,7 @@ Payload commands:
     Sets the NUL character as the sole delimiter for payload data, and sets all
     balance and trim properties to false.
   ,l    (payload-line-delimited: () -> ())
-    Sets the "\n", "\r", and "\r\n" as value delimeters, and sets all
+    Sets the "\n", "\r", and "\r\n" as value delimiters, and sets all
     paren-related balancing and trimming to false. If this mode is in use when
     the payload is first extracted (or with ,!), leading line feeds in the
     payload are skipped. This can be indicated in generic properties with the

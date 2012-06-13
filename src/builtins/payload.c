@@ -198,7 +198,7 @@ static int find_opt_delim(string delim, string haystack,
 static void set_payload(interpreter* interp, string data);
 
 /* Sets payload data to that extracted from code, using the current data-start
- * delimeter. Returns whether extraction succeeded.
+ * delimiter. Returns whether extraction succeeded.
  */
 static int payload_from_code(interpreter* interp) {
   unsigned eoc, sop;
@@ -578,7 +578,7 @@ static int payload_datum_at_index(interpreter* interp) {
     --ix;
 
   /* If ix > 0 or off == DATA->len, there is no item at this index.
-   * Otherwise, the datum begins at off and ends at the next delimeter or EOS.
+   * Otherwise, the datum begins at off and ends at the next delimiter or EOS.
    */
   if (ix > 0 || off >= DATA->len) {
     print_error_s("Index out of range", six);
@@ -586,7 +586,7 @@ static int payload_datum_at_index(interpreter* interp) {
     return 0;
   }
 
-  /* Set to EOS in case there is no next delimeter. */
+  /* Set to EOS in case there is no next delimiter. */
   next = DATA->len;
   /* If there is a next delimiter, move next there; otherwise, leave it at
    * EOS. */
