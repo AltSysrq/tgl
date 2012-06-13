@@ -602,6 +602,52 @@ static int payload_datum_at_index(interpreter* interp) {
   return 1;
 }
 
+static int payload_datum_at_key(interpreter* interp) {
+  string s, key;
+  unsigned off, end, next;
+
+  AUTO;
+
+  if (!(s = stack_pop(interp))) UNDERFLOW;
+
+  off = 0;
+  /* We don't need to handle the case of the last item here (that is, an item
+   * with no delim before EOS) since that would be an isolated key anyway.
+   */
+  while (off < DATA->len &&
+         find_delimiter_from(interp->payload.value_delim,
+                             DATA, off,
+                             &end, &next, &interp->payload)) {
+    key = payload_trim(create_string(string_data(DATA)+off,
+                                     string_data(DATA)+end),
+                       &interp->payload);
+    off = next;
+    if (!find_delimiter_from(interp->payload.value_delim,
+                             DATA, off,
+                             &end, &next, &interp->payload))
+      end = next = DATA->len;
+
+    if (string_equals(s, key)) {
+      /* Found */
+      free(s);
+      free(key);
+      stack_push(interp,
+                 payload_trim(create_string(string_data(DATA)+off,
+                                            string_data(DATA)+end),
+                              &interp->payload));
+      return 1;
+    }
+
+    off = next;
+    free(key);
+  }
+
+  /* The loop only ends if the key is not found. */
+  print_error_s("Key not found", s);
+  stack_push(interp, s);
+  return 0;
+}
+
 /* Automatically replaces the interpreter's current payload, and performs any
  * implicit skipping needed.
  */
@@ -638,6 +684,7 @@ static struct {
   { 'h', payload_length_bytes },
   { 'i', payload_datum_at_index },
   { 'I', payload_num_indices },
+  { 'k', payload_datum_at_key },
   {0,0},
 };
 
