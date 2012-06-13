@@ -3,6 +3,7 @@
 #endif
 
 #include <ctype.h>
+#include <glob.h>
 
 #include "../tgl.h"
 #include "../strings.h"
@@ -830,6 +831,79 @@ static int payload_from_file(interpreter* interp) {
   return 1;
 }
 
+static int payload_from_glob(interpreter* interp) {
+  string sglob, payload;
+  char cglob[1024];
+  glob_t result = {0,0,0};
+  int status;
+  unsigned i;
+
+  if (!(sglob = stack_pop(interp))) UNDERFLOW;
+
+  if (sglob->len+1 >= sizeof(cglob)) {
+    print_error("Glob pattern too long");
+    stack_push(interp, sglob);
+    return 0;
+  }
+
+  /* Input OK, copy to NTBS */
+  memcpy(cglob, string_data(sglob), sglob->len);
+  cglob[sglob->len] = 0;
+
+  status = glob(cglob, 0
+                #ifdef GLOB_BRACE
+                | GLOB_BRACE
+                #endif
+                #ifdef GLOB_TILDE
+                | GLOB_TILDE
+                #endif
+                , NULL, &result);
+
+  switch (status) {
+  case GLOB_NOSPACE:
+    print_error("Insufficient memory for glob results");
+    stack_push(interp, sglob);
+    return 0;
+
+  case GLOB_ABORTED:
+    print_error("Read error while globbing");
+    stack_push(interp, sglob);
+    return 0;
+
+  case GLOB_NOMATCH:
+    print_error_s("No matches for pattern", sglob);
+    stack_push(interp, sglob);
+    return 0;
+
+  case 0: break;
+
+  default:
+    fprintf(stderr, "tgl: error: glob: unexpected return code %d: %s\n",
+            errno, strerror(errno));
+    stack_push(interp, sglob);
+    return 0;
+  }
+
+  /* Success */
+  free(sglob);
+
+  payload = empty_string();
+
+  for (i = 0; i < result.gl_pathc; ++i)
+    /* Append the string as well as its term NUL */
+    payload = append_data(payload,
+                          result.gl_pathv[i],
+                          result.gl_pathv[i]+1+strlen(result.gl_pathv[i]));
+
+  /* Decrement length to remove any trailing NUL */
+  if (payload->len) --payload->len;
+
+  /* Done */
+  set_payload(interp, payload);
+  payload_nul_delimited(interp);
+  return 1;
+}
+
 /* Automatically replaces the interpreter's current payload, and performs any
  * implicit skipping needed.
  */
@@ -873,6 +947,7 @@ static struct {
   { 'e', payload_each },
   { 'E', payload_each_kv },
   { 'f', payload_from_file },
+  { 'F', payload_from_glob },
   {0,0},
 };
 
