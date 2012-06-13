@@ -123,12 +123,14 @@ static string payload_trim(string orig_str, payload_data* payload) {
  * the index of the first character of the RHS. On failure, left and right are
  * unmodified. Returns whether the delimiter was found.
  */
-static int find_delimiter(string delim, string haystack,
-                          unsigned* left, unsigned* right,
-                          payload_data* payload) {
+static int find_delimiter_from(string delim, string haystack,
+                               unsigned starting_index,
+                               unsigned* left, unsigned* right,
+                               payload_data* payload) {
   unsigned i, j;
   if (delim == PAYLOAD_WS_DELIM) {
-    for (i = 0; i < haystack->len && !isspace(string_data(haystack)[i]); ++i)
+    for (i = starting_index;
+         i < haystack->len && !isspace(string_data(haystack)[i]); ++i)
       balance_parens(&i, haystack, payload);
     for (j = i; j < haystack->len &&  isspace(string_data(haystack)[j]); ++j);
     if (i == j)
@@ -140,7 +142,8 @@ static int find_delimiter(string delim, string haystack,
     *right = j;
     return 1;
   } else if (delim == PAYLOAD_LINE_DELIM) {
-    for (i = 0; i < haystack->len && string_data(haystack)[i] != '\n' &&
+    for (i = starting_index;
+         i < haystack->len && string_data(haystack)[i] != '\n' &&
            string_data(haystack)[i] != '\r'; ++i)
       balance_parens(&i, haystack, payload);
     if (i == haystack->len) return 0;
@@ -152,7 +155,7 @@ static int find_delimiter(string delim, string haystack,
     return 1;
   } else {
     /* Why can't there be memmem() like strstr()? */
-    for (i = 0; i <= haystack->len - delim->len; ++i) {
+    for (i = starting_index; i <= haystack->len - delim->len; ++i) {
       if (balance_parens(&i, haystack, payload)) continue;
       for (j = 0; j < delim->len &&
              string_data(haystack)[i+j] == string_data(delim)[j]; ++j);
@@ -167,6 +170,13 @@ static int find_delimiter(string delim, string haystack,
     /* Not found */
     return 0;
   }
+}
+
+/* Like find_delimiter_from, but assumes starting_index is zero. */
+static int find_delimiter(string delim, string haystack,
+                          unsigned* left, unsigned* right,
+                          payload_data* payload) {
+  return find_delimiter_from(delim, haystack, 0, left, right, payload);
 }
 
 /* Like find_delimiter, but uses the whole string if no delimiter is found.
@@ -507,6 +517,91 @@ static int payload_length_bytes(interpreter* interp) {
   return 1;
 }
 
+static int payload_num_indices(interpreter* interp) {
+  unsigned off, ignore, cnt;
+  AUTO;
+
+  off = 0;
+  cnt = 0;
+  while (find_delimiter_from(interp->payload.value_delim,
+                             DATA, off,
+                             &ignore, &off, &interp->payload))
+    ++cnt;
+
+  /* If off is not at EOS, there is one more datum following. */
+  if (off < DATA->len) ++cnt;
+
+  /* Done */
+  stack_push(interp, int_to_string(cnt));
+  return 1;
+}
+
+static int payload_datum_at_index(interpreter* interp) {
+  string six, scnt;
+  signed ix, cnt;
+  unsigned off, next, ignore;
+
+  AUTO;
+
+  if (!(six = stack_pop(interp))) UNDERFLOW;
+  if (!string_to_int(six, &ix)) {
+    print_error_s("Invalid integer", six);
+    stack_push(interp, six);
+    return 0;
+  }
+
+  /* If the index is negative, count how many items are left and add the count
+   * to the index.
+   */
+  if (ix < 0) {
+    payload_num_indices(interp);
+    scnt = stack_pop(interp);
+    string_to_int(scnt, &cnt);
+    free(scnt);
+    ix += cnt;
+  }
+
+  /* Bounds check.
+   * The upper bound can't be determined till we fall off the end.
+   */
+  if (ix < 0) {
+    print_error_s("Index out of range", six);
+    stack_push(interp, six);
+    return 0;
+  }
+
+  off = 0;
+  while (off < DATA->len && ix > 0 &&
+         find_delimiter_from(interp->payload.value_delim,
+                             DATA, off,
+                             &ignore, &off, &interp->payload))
+    --ix;
+
+  /* If ix > 0 or off == DATA->len, there is no item at this index.
+   * Otherwise, the datum begins at off and ends at the next delimeter or EOS.
+   */
+  if (ix > 0 || off >= DATA->len) {
+    print_error_s("Index out of range", six);
+    stack_push(interp, six);
+    return 0;
+  }
+
+  /* Set to EOS in case there is no next delimeter. */
+  next = DATA->len;
+  /* If there is a next delimiter, move next there; otherwise, leave it at
+   * EOS. */
+  find_delimiter_from(interp->payload.value_delim, DATA, off,
+                      &next, &ignore, &interp->payload);
+
+  /* Extract datum and return success. */
+  stack_push(interp,
+             payload_trim(create_string(string_data(DATA)+off,
+                                        string_data(DATA)+next),
+                          &interp->payload));
+  free(six);
+  return 1;
+}
+
 /* Automatically replaces the interpreter's current payload, and performs any
  * implicit skipping needed.
  */
@@ -541,6 +636,8 @@ static struct {
   { '/', payload_set_property },
   { '?', payload_get_property },
   { 'h', payload_length_bytes },
+  { 'i', payload_datum_at_index },
+  { 'I', payload_num_indices },
   {0,0},
 };
 

@@ -308,8 +308,13 @@ Payload commands:
       (,h)(,cRK,,,cRV,, body)w
   ,i    (payload-datum-at-index: index -> value)
     Pushes the payload element at the given index.
+    Note that this command has O(n) complexity.
+  ,I    (payload-num-indices: () -> count)
+    Returns the number of elements in the current payload.
+    Note that this command has O(n) complexity.
   ,k    (payload-datum-at-key: key -> value)
     Pushes the first payload value element with the given key.
+    Note that this command has O(n) complexity.
   ,/VV  (payload-set-property: value -> ())
     Configures the given property to the given string. Legal values for VV:
       ps (payload-start, default ",$")
