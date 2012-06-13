@@ -674,6 +674,48 @@ static int payload_nul_delimited(interpreter* interp) {
   return 1;
 }
 
+static int payload_each(interpreter* interp) {
+  string body;
+  int status;
+  unsigned off, end, next;
+  byte reg;
+
+  AUTO;
+
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Register name expected");
+    return 0;
+  }
+
+  reg = curr(interp);
+
+  if (!(body = stack_pop(interp))) UNDERFLOW;
+
+  off = 0;
+  status = 1;
+  while (off < DATA->len && status) {
+    /* Set end and next to EOS in case there is no delimiter. */
+    end = next = DATA->len;
+    find_delimiter_from(interp->payload.value_delim,
+                        DATA, off, &end, &next, &interp->payload);
+
+    /* Set register */
+    free(interp->registers[reg]);
+    interp->registers[reg] =
+      payload_trim(create_string(string_data(DATA)+off,
+                                 string_data(DATA)+end),
+                   &interp->payload);
+
+    /* Execute body and move to next item */
+    status = exec_code(interp, body);
+    off = next;
+  }
+
+  free(body);
+  return status;
+}
+
 /* Automatically replaces the interpreter's current payload, and performs any
  * implicit skipping needed.
  */
@@ -714,6 +756,7 @@ static struct {
   { 's', payload_space_delimited },
   { 'l', payload_line_delimited },
   { '0', payload_nul_delimited },
+  { 'e', payload_each },
   {0,0},
 };
 
