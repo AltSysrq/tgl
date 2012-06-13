@@ -716,6 +716,66 @@ static int payload_each(interpreter* interp) {
   return status;
 }
 
+static int payload_each_kv(interpreter* interp) {
+  string body;
+  int status;
+  unsigned off, end, next;
+  byte kreg, vreg;
+
+  AUTO;
+
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Register name expected");
+    return 0;
+  }
+  kreg = curr(interp);
+
+  ++interp->ip;
+  if (!is_ip_valid(interp)) {
+    print_error("Value register name expected");
+    return 0;
+  }
+  vreg = curr(interp);
+
+  if (!(body = stack_pop(interp))) UNDERFLOW;
+
+  off = 0;
+  status = 1;
+  while (off < DATA->len && status) {
+    /* Extract and set key register */
+    end = next = DATA->len;
+    find_delimiter_from(interp->payload.value_delim,
+                        DATA, off, &end, &next, &interp->payload);
+    free(interp->registers[kreg]);
+    interp->registers[kreg] =
+      payload_trim(create_string(string_data(DATA)+off,
+                                 string_data(DATA)+end),
+                   &interp->payload);
+    off = next;
+
+    /* Stop now if no value remains */
+    if (off >= DATA->len) break;
+
+    /* Extract and set value register */
+    end = next = DATA->len;
+    find_delimiter_from(interp->payload.value_delim,
+                        DATA, off, &end, &next, &interp->payload);
+    free(interp->registers[vreg]);
+    interp->registers[vreg] =
+      payload_trim(create_string(string_data(DATA)+off,
+                                 string_data(DATA)+end),
+                   &interp->payload);
+    off = next;
+
+    /* Run body */
+    status = exec_code(interp, body);
+  }
+
+  free(body);
+  return status;
+}
+
 /* Automatically replaces the interpreter's current payload, and performs any
  * implicit skipping needed.
  */
@@ -757,6 +817,7 @@ static struct {
   { 'l', payload_line_delimited },
   { '0', payload_nul_delimited },
   { 'e', payload_each },
+  { 'E', payload_each_kv },
   {0,0},
 };
 
