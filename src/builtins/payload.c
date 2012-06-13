@@ -706,6 +706,7 @@ static int payload_each(interpreter* interp) {
       payload_trim(create_string(string_data(DATA)+off,
                                  string_data(DATA)+end),
                    &interp->payload);
+    touch_reg(interp, reg);
 
     /* Execute body and move to next item */
     status = exec_code(interp, body);
@@ -752,6 +753,7 @@ static int payload_each_kv(interpreter* interp) {
       payload_trim(create_string(string_data(DATA)+off,
                                  string_data(DATA)+end),
                    &interp->payload);
+    touch_reg(interp, kreg);
     off = next;
 
     /* Stop now if no value remains */
@@ -766,6 +768,7 @@ static int payload_each_kv(interpreter* interp) {
       payload_trim(create_string(string_data(DATA)+off,
                                  string_data(DATA)+end),
                    &interp->payload);
+    touch_reg(interp, vreg);
     off = next;
 
     /* Run body */
@@ -774,6 +777,57 @@ static int payload_each_kv(interpreter* interp) {
 
   free(body);
   return status;
+}
+
+static int payload_from_file(interpreter* interp) {
+  string payload;
+  byte buffer[4096];
+  unsigned cnt;
+  FILE* file;
+  char filename[1024];
+  string sfilename;
+
+  /* Get and copy the filename, open the file. */
+  if (!(sfilename = stack_pop(interp))) UNDERFLOW;
+  if (sfilename->len+1 >= sizeof(filename)) {
+    print_error("Filename too long");
+    stack_push(interp, sfilename);
+    return 0;
+  }
+
+  memcpy(filename, string_data(sfilename), sfilename->len);
+  filename[sfilename->len] = 0;
+
+  if (!(file = fopen(filename, "rb"))) {
+    fprintf(stderr, "tgl: error: opening %s: %s\n",
+            filename, strerror(errno));
+    stack_push(interp, sfilename);
+    return 0;
+  }
+
+  /* Read the file in and store in string */
+  payload = empty_string();
+  while (!feof(file) && !ferror(file)) {
+    cnt = fread(buffer, 1, sizeof(buffer), file);
+    if (cnt)
+      payload = append_data(payload, buffer, buffer+cnt);
+  }
+
+  /* Did an error occur? */
+  if (ferror(file)) {
+    fprintf(stderr, "tgl: error: reading %s: %s\n",
+            filename, strerror(errno));
+    stack_push(interp, sfilename);
+    free(payload);
+    fclose(file);
+    return 0;
+  }
+
+  /* OK */
+  fclose(file);
+  free(sfilename);
+  set_payload(interp, payload);
+  return 1;
 }
 
 /* Automatically replaces the interpreter's current payload, and performs any
@@ -818,6 +872,7 @@ static struct {
   { '0', payload_nul_delimited },
   { 'e', payload_each },
   { 'E', payload_each_kv },
+  { 'f', payload_from_file },
   {0,0},
 };
 
