@@ -648,6 +648,32 @@ static int payload_datum_at_key(interpreter* interp) {
   return 0;
 }
 
+static int payload_space_delimited(interpreter* interp) {
+  if (interp->payload.value_delim > PAYLOAD_LINE_DELIM)
+    free(interp->payload.value_delim);
+
+  interp->payload.value_delim = PAYLOAD_WS_DELIM;
+  return 1;
+}
+
+static int payload_line_delimited(interpreter* interp) {
+  if (interp->payload.value_delim > PAYLOAD_LINE_DELIM)
+    free(interp->payload.value_delim);
+
+  interp->payload.value_delim = PAYLOAD_LINE_DELIM;
+  return 1;
+}
+
+static int payload_nul_delimited(interpreter* interp) {
+  byte nul = 0;
+
+  if (interp->payload.value_delim > PAYLOAD_LINE_DELIM)
+    free(interp->payload.value_delim);
+
+  interp->payload.value_delim = create_string(&nul, (&nul)+1);
+  return 1;
+}
+
 /* Automatically replaces the interpreter's current payload, and performs any
  * implicit skipping needed.
  */
@@ -685,6 +711,9 @@ static struct {
   { 'i', payload_datum_at_index },
   { 'I', payload_num_indices },
   { 'k', payload_datum_at_key },
+  { 's', payload_space_delimited },
+  { 'l', payload_line_delimited },
+  { '0', payload_nul_delimited },
   {0,0},
 };
 
