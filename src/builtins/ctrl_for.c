@@ -28,6 +28,7 @@ int builtin_for(interpreter* interp) {
       return 0;
     }
   }
+  reset_secondary_args(interp);
 
   /* Get primary arguments */
   if (!stack_pop_strings(interp, 2, &body, &sto)) UNDERFLOW;
@@ -59,7 +60,6 @@ int builtin_for(interpreter* interp) {
   touch_reg(interp, reg);
   free(sto);
   free(body);
-  reset_secondary_args(interp);
   return result;
 
   error:
@@ -79,6 +79,7 @@ int builtin_each(interpreter* interp) {
   if (!secondary_arg_as_reg(interp->u[0], &reg))
     return 0;
   if (!stack_pop_strings(interp, 2, &body, &s)) UNDERFLOW;
+  reset_secondary_args(interp);
 
   status = 1;
   for (i = 0; i < s->len && status; ++i) {
@@ -91,6 +92,5 @@ int builtin_each(interpreter* interp) {
 
   free(body);
   free(s);
-  reset_secondary_args(interp);
   return status;
 }
