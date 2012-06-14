@@ -72,21 +72,15 @@ int builtin_for(interpreter* interp) {
 /* @builtin-decl int builtin_each(interpreter*) */
 /* @builtin-bind { 'e', builtin_each }, */
 int builtin_each(interpreter* interp) {
-  string s, sreg, body;
+  string s, body;
   unsigned i;
   int status;
-  byte reg;
-  if (!stack_pop_strings(interp, 3, &body, &sreg, &s)) UNDERFLOW;
-
-  if (sreg->len != 1) {
-    print_error_s("Invalid register", sreg);
-    stack_push(interp, body);
-    stack_push(interp, sreg);
-    stack_push(interp, s);
-  }
+  byte reg = 'c';
+  if (!secondary_arg_as_reg(interp->u[0], &reg))
+    return 0;
+  if (!stack_pop_strings(interp, 2, &body, &s)) UNDERFLOW;
 
   status = 1;
-  reg = string_data(sreg)[0];
   for (i = 0; i < s->len && status; ++i) {
     free(interp->registers[reg]);
     interp->registers[reg] = create_string(string_data(s)+i,
@@ -96,7 +90,7 @@ int builtin_each(interpreter* interp) {
   }
 
   free(body);
-  free(sreg);
   free(s);
+  reset_secondary_args(interp);
   return status;
 }
