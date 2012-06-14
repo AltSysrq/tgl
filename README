@@ -50,6 +50,45 @@ The interpreter may be run with a given context (if none is given, it is the
 empty string). Context can be used for conditional inclusion in the user's
 library of macros (see "D", defun-contextual).
 
+SECONDARY ARGUMENTS
+
+(Not yet implemented.)
+
+Some commands take optional parameters via a secondary argument system. There
+are four secondary argument slots, called U0..U3. Unlike registers, they cannot
+be accessed directly, and may be null. Any command which takes secondary
+arguments nullifies all four slots after execution. There is also the secondary
+index, UX, which indicates which slot is used next. It starts at zero, and is
+incremented whenever a secondary argument is set. It is zeroed when a
+secondary-argument-using command completes execution.
+
+A secondary argument is considered "set" when UX has advanced beyond its own
+index. It is considered "provided" when it is set and non-null.
+
+Commands which use secondary arguments indicate such usage similar to the
+example below:
+
+  Secondary: [value = default] [provided?] (set?)
+
+Brackets indicate that the argument is considered if provided; parantheses, if
+set. Items of the format value=default indicate a property which has the given
+default if the argument is not provided, but which takes the value of any
+argument which is provided. Items of the format property? indicate booleans
+which are false unless the argument is provided or set (depending on whether
+brackets or parentheses are used), regardless of the argument's value. Any
+argument not noted is silently ignored.
+
+The u (secondary-argument) command is used to set secondary arguments. What it
+does depends on the following character:
+
+  %     Pop a value from the main stack and use it to provide the next argument
+  space Set the next argument to null
+  digit Evaluate the following digits (using the numeric command) and use the
+        result to provide the next argument
+  - +   Same as digit
+  other Create a one-character string with the given character and use it to
+        provide the next argument
+
 COMMANDS
 
 Built-in commands are:
