@@ -68,6 +68,9 @@ typedef struct long_command {
   struct long_command* next;
 } long_command;
 
+/* The number of secondary arguments supported. */
+#define NUM_SECONDARY_ARGS 4
+
 /* Defines all the data needed to interpret TGL code. */
 typedef struct interpreter {
   /* All short commands, indexed by character. */
@@ -98,6 +101,11 @@ typedef struct interpreter {
   int enable_history;
   /* The current implicit offset for the h command. */
   unsigned history_offset;
+
+  /* The four secondary arguments. */
+  string u[NUM_SECONDARY_ARGS];
+  /* The current index within the above. */
+  unsigned ux;
 
   /* The interpreter's payload data */
   payload_data payload;
@@ -167,6 +175,9 @@ static inline int is_ip_valid(interpreter* interp) {
 
 /* Touches the register of the given name in the given VM. */
 void touch_reg(interpreter*, byte);
+
+/* Clears the interpreter's secondary arguments. */
+void reset_secondary_args(interpreter* interp);
 
 /* Prints an error message to the user. */
 void print_error(char*);

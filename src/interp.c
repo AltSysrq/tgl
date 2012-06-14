@@ -100,6 +100,17 @@ void touch_reg(interpreter* interp, byte reg) {
   interp->reg_access[reg] = time(0);
 }
 
+void reset_secondary_args(interpreter* interp) {
+  unsigned i;
+
+  for (i = 0; i < NUM_SECONDARY_ARGS; ++i)
+    if (interp->u[i])
+      free(interp->u[i]);
+
+  memset(interp->u, 0, sizeof(interp->u));
+  interp->ux = 0;
+}
+
 void print_error(char* message) {
   fprintf(stderr, "tgl: error: %s\n", message);
 }

@@ -49,7 +49,8 @@ am__objects_1 = context.$(OBJEXT) logical_ops.$(OBJEXT) \
 	long_command.$(OBJEXT) registers.$(OBJEXT) math_ops.$(OBJEXT) \
 	defun.$(OBJEXT) ctrl_for.$(OBJEXT) quoting.$(OBJEXT) \
 	ctrl_while.$(OBJEXT) ctrl_if.$(OBJEXT) history.$(OBJEXT) \
-	stack_ops.$(OBJEXT) string_ops.$(OBJEXT) payload.$(OBJEXT)
+	stack_ops.$(OBJEXT) string_ops.$(OBJEXT) payload.$(OBJEXT) \
+	secarg.$(OBJEXT)
 am_tgl_OBJECTS = tgl.$(OBJEXT) strings.$(OBJEXT) interp.$(OBJEXT) \
 	builtins.$(OBJEXT) $(am__objects_1)
 tgl_OBJECTS = $(am_tgl_OBJECTS)
@@ -183,7 +184,8 @@ BUILTIN_FILES = \
  builtins/history.c\
  builtins/stack_ops.c\
  builtins/string_ops.c\
- builtins/payload.c
+ builtins/payload.c\
+ builtins/secarg.c
 
 tgl_SOURCES = tgl.c strings.c interp.c builtins.c $(BUILTIN_FILES)
 all: all-am
@@ -281,6 +283,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/payload.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/quoting.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/registers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/secarg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack_ops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/string_ops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strings.Po@am__quote@
@@ -495,6 +498,20 @@ payload.obj: builtins/payload.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builtins/payload.c' object='payload.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o payload.obj `if test -f 'builtins/payload.c'; then $(CYGPATH_W) 'builtins/payload.c'; else $(CYGPATH_W) '$(srcdir)/builtins/payload.c'; fi`
+
+secarg.o: builtins/secarg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT secarg.o -MD -MP -MF $(DEPDIR)/secarg.Tpo -c -o secarg.o `test -f 'builtins/secarg.c' || echo '$(srcdir)/'`builtins/secarg.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/secarg.Tpo $(DEPDIR)/secarg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builtins/secarg.c' object='secarg.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o secarg.o `test -f 'builtins/secarg.c' || echo '$(srcdir)/'`builtins/secarg.c
+
+secarg.obj: builtins/secarg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT secarg.obj -MD -MP -MF $(DEPDIR)/secarg.Tpo -c -o secarg.obj `if test -f 'builtins/secarg.c'; then $(CYGPATH_W) 'builtins/secarg.c'; else $(CYGPATH_W) '$(srcdir)/builtins/secarg.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/secarg.Tpo $(DEPDIR)/secarg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builtins/secarg.c' object='secarg.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o secarg.obj `if test -f 'builtins/secarg.c'; then $(CYGPATH_W) 'builtins/secarg.c'; else $(CYGPATH_W) '$(srcdir)/builtins/secarg.c'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

@@ -13,7 +13,8 @@ BUILTIN_FILES = \
  builtins/history.c\
  builtins/stack_ops.c\
  builtins/string_ops.c\
- builtins/payload.c
+ builtins/payload.c\
+ builtins/secarg.c
 
 tgl_SOURCES = tgl.c strings.c interp.c builtins.c $(BUILTIN_FILES)
 
