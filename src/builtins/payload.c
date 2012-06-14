@@ -14,7 +14,9 @@ void payload_data_init(payload_data* p) {
   p->data = p->data_base = p->global_code = NULL;
   p->data_start_delim = convert_string(",$");
   p->value_delim = PAYLOAD_WS_DELIM;
-  p->output_kv_delim = convert_string(",");
+  p->output_v_delim = convert_string(", ");
+  p->output_kv_delim = convert_string(", ");
+  p->output_kvs_delim = convert_string("\n");
   p->balance_paren = p->balance_brack = p->balance_brace = 1;
   p->trim_paren = p->trim_brack = p->trim_brace = 1;
   p->balance_angle = p->trim_angle = 0;
@@ -27,8 +29,9 @@ void payload_data_destroy(payload_data* p) {
     free(p->data_start_delim);
   if (p->value_delim > PAYLOAD_LINE_DELIM)
     free(p->value_delim);
-  if (p->output_kv_delim > PAYLOAD_LINE_DELIM)
-    free(p->output_kv_delim);
+  free(p->output_v_delim);
+  free(p->output_kv_delim);
+  free(p->output_kvs_delim);
 }
 
 string payload_extract_prefix(string code, payload_data* p) {
@@ -292,43 +295,87 @@ static int payload_curr(interpreter* interp) {
 
 static int payload_next(interpreter* interp) {
   unsigned begin;
+  signed cnt;
 
   AUTO;
+
+  if (!secondary_arg_as_int(interp->u[0], &cnt, 0)) return 0;
 
   if (!DATA->len) {
     print_error("No next item");
     return 0;
   }
 
-  find_opt_delim(interp->payload.value_delim, DATA, NULL, &begin,
+  do {
+    find_opt_delim(interp->payload.value_delim, DATA, NULL, &begin,
                  &interp->payload);
-  DATA = string_advance(DATA, begin);
+    DATA = string_advance(DATA, begin);
+    --cnt;
+  } while (cnt && DATA->len);
+
+  reset_secondary_args(interp);
+
   return 1;
 }
 
 extern int builtin_print(interpreter* interp);
 static int payload_print(interpreter* interp) {
-  return payload_curr(interp) && builtin_print(interp) &&
-    payload_next(interp);
+  unsigned cnt;
+  if (!secondary_arg_as_int(interp->u[0], (signed*)&cnt, 0))
+    return 0;
+  reset_secondary_args(interp);
+
+  do {
+    if (!payload_curr(interp) ||
+        !builtin_print(interp) ||
+        !payload_next(interp)) return 0;
+    --cnt;
+    /* If not the last item, add the separator */
+    if (cnt > 0 && DATA->len) {
+      stack_push(interp, dupe_string(interp->payload.output_v_delim));
+      if (!builtin_print(interp)) return 0;
+    }
+  } while (cnt && DATA->len);
+
+  return 1;
 }
 
 static int payload_next_kv(interpreter* interp) {
-  return payload_next(interp) && payload_next(interp);
+  signed cnt;
+  if (!secondary_arg_as_int(interp->u[0], &cnt, 0)) return 0;
+  reset_secondary_args(interp);
+
+  while (cnt-- > 0) {
+    if (!payload_next(interp) || !payload_next(interp))
+      return 0;
+  }
+
+  return 1;
 }
 
 static int payload_print_kv(interpreter* interp) {
-  if (!payload_print(interp)) return 0;
+  unsigned cnt;
 
-  if (interp->payload.output_kv_delim == PAYLOAD_LINE_DELIM)
-    stack_push(interp, convert_string("\n"));
-  else if (interp->payload.output_kv_delim == PAYLOAD_WS_DELIM)
-    stack_push(interp, convert_string(" "));
-  else
+  if (!secondary_arg_as_int(interp->u[0], (signed*)&cnt, 0))
+    return 0;
+  reset_secondary_args(interp);
+
+  do {
+    if (!payload_print(interp)) return 0;
     stack_push(interp, dupe_string(interp->payload.output_kv_delim));
+    if (!builtin_print(interp)) return 0;
+    if (!payload_print(interp)) return 0;
 
-  if (!builtin_print(interp)) return 0;
+    --cnt;
+    /* If this isn't the last, print separator */
+    if (cnt && DATA->len) {
+      stack_push(interp, dupe_string(interp->payload.output_kvs_delim));
+      if (!builtin_print(interp))
+        return 0;
+    }
+  } while (cnt && DATA->len);
 
-  return payload_print(interp);
+  return 1;
 }
 
 static int payload_read(interpreter* interp) {
@@ -385,6 +432,14 @@ static int payload_set_property(interpreter* interp) {
 
   case S('o','k'):
     delim = &interp->payload.output_kv_delim;
+    goto set_delim;
+
+  case S('o','v'):
+    delim = &interp->payload.output_v_delim;
+    goto set_delim;
+
+  case S('o','s'):
+    delim = &interp->payload.output_kvs_delim;
     goto set_delim;
 
   case S('b','('):
@@ -480,6 +535,14 @@ static int payload_get_property(interpreter* interp) {
 
   case S('o','k'):
     delim = interp->payload.output_kv_delim;
+    goto get_delim;
+
+  case S('o','s'):
+    delim = interp->payload.output_kvs_delim;
+    goto get_delim;
+
+  case S('o','v'):
+    delim = interp->payload.output_v_delim;
     goto get_delim;
 
   case S('b','('):
@@ -707,17 +770,14 @@ static int payload_each(interpreter* interp) {
   string body;
   int status;
   unsigned off, end, next;
-  byte reg;
+  byte reg = 'p';
 
   AUTO;
 
-  ++interp->ip;
-  if (!is_ip_valid(interp)) {
-    print_error("Register name expected");
+  if (!secondary_arg_as_reg(interp->u[0], &reg))
     return 0;
-  }
 
-  reg = curr(interp);
+  reset_secondary_args(interp);
 
   if (!(body = stack_pop(interp))) UNDERFLOW;
 
@@ -750,23 +810,15 @@ static int payload_each_kv(interpreter* interp) {
   string body;
   int status;
   unsigned off, end, next;
-  byte kreg, vreg;
+  byte kreg = 'k', vreg = 'v';
 
   AUTO;
 
-  ++interp->ip;
-  if (!is_ip_valid(interp)) {
-    print_error("Register name expected");
+  if (!secondary_arg_as_reg(interp->u[0], &kreg))
     return 0;
-  }
-  kreg = curr(interp);
-
-  ++interp->ip;
-  if (!is_ip_valid(interp)) {
-    print_error("Value register name expected");
+  if (!secondary_arg_as_reg(interp->u[1], &vreg))
     return 0;
-  }
-  vreg = curr(interp);
+  reset_secondary_args(interp);
 
   if (!(body = stack_pop(interp))) UNDERFLOW;
 

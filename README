@@ -331,16 +331,22 @@ Payload commands:
     Pushes the string corresponding to the first element of the current payload
     data onto the stack.
   ,,    (payload-next: () -> ())
-    Deletes the first element of the current payload data.
+    Secondary: [count = 1]
+    Deletes the first count elements of the current payload data.
   ,;    (payload-next-kv: () -> ())
-    Deletes the first two elements of the current payload data.
+    Secondary: [count = 1]
+    Deletes the first 2*count elements of the current payload data.
   ,.    (payload-print: () -> ())
-    Prints the first element of the current payload data, then removes it.
-    Equivalent to ,c.,,
+    Secondary: [count = 1]
+    Prints the first count elements of the current payload data, then removes
+    them. Elements are separated by the output-v-delimiter.
+    A count of 0 indicates to print all elements.
   ,:    (payload-print-kv: () -> ())
-    Prints the first two elements of the current payload data, separated by the
-    current output-kv-delimiter, then deletes them.
-    Equivalent to ,.,?ok.,.
+    Secondary: [count = 1]
+    Prints the first 2*count elements of the current payload data, separated by
+    the current output-kv-delimiter, then deletes them. Pairs are separated by
+    the current output-kvs-delimiter (ie, between the whole pairs).
+    A count of 0 indicates to print all pairs.
   ,r    (payload-read: () -> payload)
     Pushes the current payload data onto the stack.
   ,R    (payload-write: payload -> ())
@@ -350,14 +356,13 @@ Payload commands:
     Pushes an integer indicating how many bytes are left in the current payload
     data. No values remain if and only if this command returns zero. (Thus the
     mnemonic Has-more.)
-  ,eR   (payload-each: body -> ???)
+  ,e    (payload-each: body -> ???)
+    Secondary: [R = "p"]
     With R set to each consecutive value within the payload, execute body.
-    Equivalent to
-      (,h)(,cRR,, body)w
-  ,EKV  (payload-each-kv: body -> ??)
+  ,E    (payload-each-kv: body -> ??)
+    Secondary: [K = "k"] [V = "v"]
     With K set to each consecutive key, and V to each value, execute body.
     Equivalent to
-      (,h)(,cRK,,,cRV,, body)w
   ,i    (payload-datum-at-index: index -> value)
     Pushes the payload element at the given index.
     Note that this command has O(n) complexity.
@@ -374,8 +379,12 @@ Payload commands:
       vd (value-delimiter, default nonrepresentable)
         The delimiter that separates values (or keys and values) within the
         payload. Default is described by ,s.
-      ok (output-kv-delimiter, default ",")
-        The delimiter to use when outputting key-value pairs. Default is ",".
+      ok (output-kv-delimiter, default "\n")
+        The delimiter to use when outputting key-value pairs.
+      ov (output-value-delimiter, default ", ")
+        The delimiter to use when outputting values.
+      os (output-kvs-delimiter, default ", ")
+        The delimiter to use between output key-value pairs.
       b(, b[, b{, b<    (balance-paren)
         May be set to any legal boolean. When true, delimiters do not split
         values when the given paren type is unbalanced. When false, the

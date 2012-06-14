@@ -22,7 +22,8 @@ typedef struct payload_data {
    * Note that delimiters might not be valid pointers; see PAYLOAD_LINE_DELIM
    * and PAYLOAD_WS_DELIM.
    */
-  string data_start_delim, value_delim, output_kv_delim;
+  string data_start_delim, value_delim, output_kv_delim, output_v_delim,
+    output_kvs_delim;
   int balance_paren, balance_brack, balance_brace, balance_angle;
   int trim_paren, trim_brack, trim_brace, trim_angle, trim_space;
 } payload_data;
