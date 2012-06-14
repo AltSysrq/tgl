@@ -192,6 +192,8 @@ Built-in commands are:
     command.
   z     (stash-retrieve: code -> code)
     Places a "p" at the beginning of code, and a "P" at the end.
+  u     (secondary-argument: () -> () or value -> ())
+    See SECONDARY ARGUMENT above.
   "..." (string: ??? -> string)
     Pushes an interpolated string to the stack. The following characters are
     considered special:
