@@ -186,6 +186,13 @@ void reset_secondary_args(interpreter* interp);
  */
 int secondary_arg_as_int(string, signed* dst, int allow_negative);
 
+/* Interprets the given secondary argument as a register. If it is not present,
+ * dst is untouched.
+ *
+ * Returns whether successful.
+ */
+int secondary_arg_as_reg(string, byte* dst);
+
 /* Prints an error message to the user. */
 void print_error(char*);
 

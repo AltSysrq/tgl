@@ -130,6 +130,19 @@ int secondary_arg_as_int(string str, signed* dst, int allow_negative) {
   return 1;
 }
 
+int secondary_arg_as_reg(string str, byte* dst) {
+  if (str) {
+    if (str->len != 1) {
+      print_error_s("Invalid register", str);
+      return 0;
+    }
+
+    *dst = string_data(str)[0];
+  }
+
+  return 1;
+}
+
 void print_error(char* message) {
   fprintf(stderr, "tgl: error: %s\n", message);
 }

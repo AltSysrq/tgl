@@ -34,6 +34,7 @@ int builtin_secondary_argument(interpreter* interp) {
     break;
 
   case ' ':
+    s = NULL;
     break;
 
   case '.':
