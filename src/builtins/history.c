@@ -9,32 +9,25 @@
 /* @builtin-decl int builtin_history(interpreter*) */
 /* @builtin-bind { 'h', builtin_history }, */
 int builtin_history(interpreter* interp) {
-  string soff;
-  signed off;
+  signed off = 0;
 
-  soff = stack_pop(interp);
-  if (!soff)
-    /* Assume 0 */
-    off = 0;
-  else
-    if (!string_to_int(soff, &off)) {
-      print_error("Invalid integer");
-      stack_push(interp, soff);
+  if (interp->u[0])
+    if (!secondary_arg_as_int(interp->u[0], &off, 1))
       return 0;
-    }
 
   off += interp->history_offset;
 
   if (off < 0 || off >= 0x20) {
-    print_error("Invalid history offset");
-    if (soff)
-      stack_push(interp, soff);
+    if (interp->u[0])
+      print_error_s("Invalid history offset", interp->u[0]);
+    else
+      print_error("History exhausted");
     return 0;
   }
 
   /* OK */
   stack_push(interp, dupe_string(interp->registers[off]));
-  free(soff);
+  reset_secondary_args(interp);
   ++interp->history_offset;
   return 1;
 }

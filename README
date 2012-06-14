@@ -258,7 +258,8 @@ Built-in commands are:
       @e Pushes the filename extension of the context string, including the ".".
   H     (suppress-history: () -> ())
     If executed, the input will not be added to the user's TGL history.
-  h     (history-access: [off] -> ())
+  h     (history-access: () -> ())
+    Secondary: [off = 0]
     Expends to the history at the given offset. If the stack is empty when
     trying to read off, assume 0. Each usage of h increments a counter which is
     implicitly added to whatever offset is specified; the increment occurs
