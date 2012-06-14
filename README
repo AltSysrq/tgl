@@ -86,6 +86,8 @@ does depends on the following character:
   digit Evaluate the following digits (using the numeric command) and use the
         result to provide the next argument
   - +   Same as digit
+  .     Provides an integer corresponding to the current stack height as the
+        next argument.
   other Create a one-character string with the given character and use it to
         provide the next argument
 
@@ -109,12 +111,17 @@ Built-in commands are:
     which will probably fail.
     For unicode characters, using double-quotes (see below) will work, in that
     the string will contain both bytes encoding the character.
-  :     (dupe: item -> item item)
-    The top item on the stack is duplicated.
-  ;     (drop: item -> ())
+  :     (dupe: item -> item item{times})
+    Secondary: [times = 1]
+    The top item on the stack is duplicated the given number of times.
+  ;     (drop: item{times} -> ())
+    Secondary: [times = 1]
     The top item on the stack is popped and discarded.
-  x     (swap: a b -> b a)
-    The top two items on the stack are swapped.
+  x     (swap: a{depth} b -> b a{depth})
+    Secondary: [depth = 1]
+    The top two items on the stack are swapped. With a secondary argument, this
+    rolls the top element under that many items. A negative secondary argument
+    performs the reverse operation.
   c     (concat: a b -> ab)
     Pops the top two elements from the stack and pushed their concatenation.
   l     (length: string -> length)
@@ -126,9 +133,14 @@ Built-in commands are:
     (including from excluding to).
   S     (suffix: string from -> substr)
     Like substr, but assumes to is the end of the string.
-  m     (map: string [from to ...]{n} n -> string)
+  m     (map: string [from to ...]{n} n -> string, or
+              string [from to ...]{???} -> string)
+    Secondary: [stack-depth = null]
     Maps each occurance of from to to in the string, left to right. Replaced
-    text is not subject to replacement.
+    text is not subject to replacement. If a secondary argument is provided, it
+    is assumed to be an integer indicating the stack height below the first
+    argument (the string to map). Otherwise, the number of pairs to map must be
+    provided as a normal argument.
   +     (add: a b -> (a+b))
   -     (sub: a b -> (a-b))
   *     (mul: a b -> (a*b))
@@ -166,12 +178,12 @@ Built-in commands are:
     repeat.
   W     (short-while: code -> ???)
     Evaluate code. If the top of the stack (popped) is true, repeat.
-  f     (for: reg from to body -> ???)
+  f     (for: to body -> ???)
+    Secondary: [from = 0] [reg = "i"] [increment = +1 or -1, automatically]
     Execute body with reg set to increasing values starting at from and ending
     (but not including) to.
-  F     (short-for: to body -> ???)
-    Like for, but assumes the register is "i" and from is "0".
-  e     (each: string reg body -> ???)
+  e     (each: string body -> ???)
+    Secondary: [reg = "c"]
     Executes body with reg set to each character in the given string.
   d     (defun: name body -> ())
     Defines the command of the given name. If it already exists, it is replaced.
@@ -185,9 +197,9 @@ Built-in commands are:
     Pushes the contents of register C to the stack.
   RC    (write: string -> ())
     Pops the top stack value into register C.
-  p     (stash: () -> <undefined>)
+  p     (stash: () -> ())
     Pushes all registers onto a stack independent of the main one.
-  P     (retrieve: <undefined> -> ())
+  P     (retrieve: () -> ())
     Pops all registers from the stack used by p, undoing the effect of that
     command.
   z     (stash-retrieve: code -> code)
