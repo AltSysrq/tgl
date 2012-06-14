@@ -231,6 +231,8 @@ Built-in commands are:
     The following do nothing (no string is pushed); they are intended for
     manual balancing:
       \( \) \[ \] \{ \} \< \>
+  y     (empty-string: () -> "")
+    Pushes an empty string onto the stack.
   #     (number: () -> integer)
     Skips the #, then reads an optional sign followed by digits and pushes the
     resulting integer.
@@ -272,6 +274,32 @@ Built-in commands are:
   ,...  (data-payload: varies)
     Prefix for all data-payload commands. See the DATA PAYLOAD section for
     details.
+  b     (shell-script: input script -> stdout)
+    Executes $SHELL -e <script>, and pushes its output onto the stack. The
+    command inherits stderr from tgl. The command fails if the subprocess
+    returns non-zero, or if the process cannot be started.
+  B     (shell-command: input args{n} n -> output, or input args{???} -> output)
+    Secondary: [argument-count = null]
+    Executes the given shell command, the arguments pushed in the order they
+    will be used. The first argument is the command to run. No additional
+    processing is performed on the arguments given: They are passed to the
+    program verbatim.
+  r...  (sed: input -> output, or input script -> output)
+    Executes "sed -r" on the given input, pushing the output onto the stack. The
+    script follows this extended regex:
+      (${STATEMENT};\s*)*${STATEMENT}
+    where
+      ${STATEMENT} = [a-zA-Z](.)[^\1]*\1[^\1]*\1[a-zA-Z]*
+    If no script is extracted, the script is instead popped off the stack,
+    allowing for more complex sed scripts.
+  R     (perl: input script -> output)
+    Invokes "perl -E" with the given script and standard input. The environment
+    variable $TGL_PERL can be set to override the location of the perl
+    executable.
+  t     (tcl: input script -> output)
+    Invokes "tclsh" with the given input and script, and pushes the output onto
+    the stack. The executable name/path can be overriden with the environment
+    variable $TGL_TCLSH.
 
 REGISTER PERSISTENCE
 
