@@ -6,6 +6,13 @@
 #include "../strings.h"
 #include "../interp.h"
 
+/* @builtin-decl int builtin_empty_string(interpreter*) */
+/* @builtin-bind { 'y', builtin_empty_string }, */
+int builtin_empty_string(interpreter* interp) {
+  stack_push(interp, empty_string());
+  return 1;
+}
+
 /* @builtin-decl int builtin_print(interpreter*) */
 /* @builtin-bind { '.', builtin_print }, */
 int builtin_print(interpreter* interp) {
