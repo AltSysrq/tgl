@@ -172,19 +172,49 @@ int builtin_suffix(interpreter* interp) {
 int builtin_map(interpreter* interp) {
   string str, *mapping, sn, result;
   signed n;
-  unsigned i, j, k, bufferSize, bufferIx;
+  unsigned i, j, k, bufferSize, bufferIx, height;
   byte* buffer;
+  stack_elt* elt;
 
-  if (!(sn = stack_pop(interp))) UNDERFLOW;
-  if (!string_to_int(sn, &n)) {
-    print_error_s("Bad integer", sn);
-    stack_push(interp, sn);
-    return 0;
+  if (interp->u[0]) {
+    /* Get the old stack height */
+    if (!secondary_arg_as_int(interp->u[0], &n, 0))
+      return 0;
+
+    /* Count the current stack height */
+    height = 0;
+    for (elt = interp->stack; elt; elt = elt->next)
+      ++height;
+
+    n = height - n;
+
+    if (n < 1) {
+      print_error("Invalid usage of secondary argument");
+      return 0;
+    }
+
+    /* Total length must be odd (2n mappings + 1 string) */
+    if (!(n&1)) {
+      print_error("Non-even number of mappings");
+      return 0;
+    }
+
+    /* Number is valid. */
+    n /= 2;
+    sn = NULL;
+  } else {
+    if (!(sn = stack_pop(interp))) UNDERFLOW;
+    if (!string_to_int(sn, &n)) {
+      print_error_s("Bad integer", sn);
+      stack_push(interp, sn);
+      return 0;
+    }
   }
 
   if (n < 0 || n >= 65536) {
     print_error_s("Invalid mapping size", sn);
-    stack_push(interp, sn);
+    if (sn)
+      stack_push(interp, sn);
     return 0;
   }
 
@@ -199,7 +229,8 @@ int builtin_map(interpreter* interp) {
     for (i = n*2; i > 0; --i)
       stack_push(interp, mapping[i-1]);
     free(mapping);
-    stack_push(interp, sn);
+    if (sn)
+      stack_push(interp, sn);
     UNDERFLOW;
   }
 
@@ -269,12 +300,14 @@ int builtin_map(interpreter* interp) {
   /* Clean up and return result. */
   for (i = 0; i < n*2; ++i)
     free(mapping[i]);
-  free(sn);
+  if (sn)
+    free(sn);
   free(str);
   free(buffer);
   free(mapping);
 
   stack_push(interp, result);
+  reset_secondary_args(interp);
   return 1;
 }
 
