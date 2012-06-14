@@ -179,6 +179,13 @@ void touch_reg(interpreter*, byte);
 /* Clears the interpreter's secondary arguments. */
 void reset_secondary_args(interpreter* interp);
 
+/* Interprets the given secondary argument as an integer, defaulting to
+ * 1. Forbids negatives unless allow_negative is true.
+ *
+ * Returns whether successful.
+ */
+int secondary_arg_as_int(string, signed* dst, int allow_negative);
+
 /* Prints an error message to the user. */
 void print_error(char*);
 

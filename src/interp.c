@@ -111,6 +111,25 @@ void reset_secondary_args(interpreter* interp) {
   interp->ux = 0;
 }
 
+int secondary_arg_as_int(string str, signed* dst, int allow_negative) {
+  signed cnt = 1;
+
+  if (str) {
+    if (!string_to_int(str, &cnt)) {
+      print_error_s("Invalid integer", str);
+      return 0;
+    }
+
+    if (!allow_negative && cnt < 0) {
+      print_error_s("Invalid count", str);
+      return 0;
+    }
+  }
+
+  *dst = cnt;
+  return 1;
+}
+
 void print_error(char* message) {
   fprintf(stderr, "tgl: error: %s\n", message);
 }
