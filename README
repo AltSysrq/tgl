@@ -52,8 +52,6 @@ library of macros (see "D", defun-contextual).
 
 SECONDARY ARGUMENTS
 
-(Not yet implemented.)
-
 Some commands take optional parameters via a secondary argument system. There
 are four secondary argument slots, called U0..U3. Unlike registers, they cannot
 be accessed directly, and may be null. Any command which takes secondary
