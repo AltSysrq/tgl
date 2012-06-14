@@ -440,10 +440,10 @@ Hello world:
   )i.)w
 
 Quickly generate case statements for each digit:
-  10("`case '$i':\n".)F
+  10("`case '$i':\n".)f
 
 Save the previous to a language-specific macro:
-  "nc"0hzVe
+  "nc"hzVe
 
 Resusing the new macro:
   Qnc
