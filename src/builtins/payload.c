@@ -32,8 +32,36 @@ void payload_data_destroy(payload_data* p) {
 }
 
 string payload_extract_prefix(string code, payload_data* p) {
-  /* TODO */
-  return code;
+  unsigned prefixEnd, delimLen=0, i, j;
+  string new_code;
+
+  for (i = 0; i < code->len; ++i) {
+    if (string_data(code)[i] == '|') {
+      for (j = i+1; j < code->len && string_data(code)[j] == '|'; ++j);
+      /* Advance the prefix if the length exceeds the longest found so far */
+      if (j-i > delimLen) {
+        prefixEnd = i;
+        delimLen = j-i;
+      }
+
+      /* Move past the |s */
+      i = j-1;
+    }
+  }
+
+  /* If any delimiter was found, delimLen will be > 0.
+   * Otherwise, there is no prefix data.
+   */
+  if (delimLen == 0) return code;
+
+  /* Extract payload and code proper */
+  if (p->data) free(p->data_base);
+  p->data = p->data_base = create_string(string_data(code),
+                                         string_data(code)+prefixEnd);
+  new_code = create_string(string_data(code)+prefixEnd+delimLen,
+                           string_data(code)+code->len);
+  free(code);
+  return new_code;
 }
 
 /* If the character at *ix is an opening parenthesis character and that type is

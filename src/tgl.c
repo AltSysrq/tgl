@@ -24,6 +24,7 @@
 #include "tgl.h"
 #include "strings.h"
 #include "interp.h"
+#include "builtins/payload.h"
 
 char* user_library_file, * current_context;
 int suppress_unknown_alignment_warning;
@@ -214,12 +215,16 @@ static int write_persistent_registers(interpreter* interp, char* filename) {
  * If set_global_code is true, the global_code of the payload data is set to
  * the executing code, and reset to NULL on return.
  *
+ * If prefix_payload is true, try to extract prefix payload data if it can be
+ * found, before executing.
+ *
  * Returns an exit code.
  */
 static int exec_file(interpreter* interp, FILE* file,
                      int scan_initial_whitespace,
                      int enable_history,
-                     int set_global_code) {
+                     int set_global_code,
+                     int prefix_payload) {
   string input;
   char buffer[1024];
   unsigned len, i;
@@ -246,6 +251,9 @@ static int exec_file(interpreter* interp, FILE* file,
     interp->initial_whitespace = create_string(string_data(input),
                                                string_data(input)+i);
   }
+
+  if (prefix_payload)
+    input = payload_extract_prefix(input, &interp->payload);
 
   if (set_global_code)
     interp->payload.global_code = input;
@@ -299,7 +307,7 @@ static void load_user_library(interpreter* interp) {
     return;
   }
 
-  status = exec_file(interp, file, 0, 0, 0);
+  status = exec_file(interp, file, 0, 0, 0, 0);
   fclose(file);
 
   /* Clear the stack and reset history offset */
@@ -321,6 +329,7 @@ static void print_usage() {
 "  -r, --register-persistence file  Use the given file (instead of\n"
 "                                   ~/.tgl_registers) to preserve registers.\n"
 "  -c, --context name               Specify the current context.\n"
+"  -p, --prefix-payload             Look for payload at the beginning of code\n"
 /* -A doesn't need to be shown here. */
 "  -h, --help                       This help message.\n"
     );
@@ -330,6 +339,7 @@ static void print_usage() {
 "  -r file  Use the given file (instead of ~/.tgl_registers) to preserve\n"
 "           registers.\n"
 "  -c name  Specify the current context.\n"
+"  -p       Look for payload at beginning of code\n"
 /* -A doesn't need to be shown here. */
 "  -h       This help message.\n"
     );
@@ -341,15 +351,16 @@ int main(int argc, char** argv) {
   char reg_persistence_file_default[256];
   char user_library_file_default[256];
   char* reg_persistence_file;
-  int ret, cmdstat;
+  int ret, cmdstat, prefix_payload = 0;
   FILE* input;
-  static char short_options[] = "l:r:c:Ah";
+  static char short_options[] = "l:r:c:Aph";
 #ifdef _GNU_SOURCE
   static struct option long_options[] = {
    { "library", 1, NULL, 'l' },
    { "register-persistence", 1, NULL, 'r' },
    { "context", 1, NULL, 'c' },
    { "suppress-alignment-warning", 0, NULL, 'A' },
+   { "prefix-payload", 0, NULL, 'p' },
    { "help", 0, NULL, 'h' },
    {0},
   };
@@ -398,6 +409,10 @@ int main(int argc, char** argv) {
     case 'A':
       suppress_unknown_alignment_warning = 1;
       break;
+
+    case 'p':
+      prefix_payload = 1;
+      break;
     }
   } while (cmdstat != -1);
 
@@ -425,7 +440,7 @@ int main(int argc, char** argv) {
   /* Try to execute the user library */
   load_user_library(&interp);
   /* Execute primary input */
-  ret = exec_file(&interp, input, 1, 1, 1);
+  ret = exec_file(&interp, input, 1, 1, 1, prefix_payload);
   /* If successful, save registers */
   if (ret == 0)
     write_persistent_registers(&interp, reg_persistence_file);

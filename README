@@ -263,10 +263,10 @@ Most commonly, one includes payload data within the script itself. Usually,
 payload data starts after the text ",$", though the delimiter can be
 changed. By passing the -p (or --prefix-payload) flag, it is also possible to
 include a payload at the beginning of input. In this case, code is considered
-to start after the first ",$" (though initial whitespace still counts within
-the payload). Multiple dollar-signs can be used to include the ",$" within the
-payload; the first occurance that has the greatest number of dollar-signs is
-used to separate the payload and the code.
+to start after the first "|" (though initial whitespace (for the ` character
+within strings) still counts within the payload). Multiple pipes can be used to
+include the "|" within the payload; the first occurance that has the greatest
+number of dollar-signs is used to separate the payload and the code.
 
 The first occurrance of a payload-data command which requires access to the
 payload will search for the start-of-payload delimiter (default ",$") in the
