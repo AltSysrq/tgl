@@ -90,7 +90,7 @@ static string invoke_external(char** argv, string input) {
     execvp(argv[0], argv);
     /* If we get here, execvp() failed */
     fprintf(stderr, "tgl: error: execvp: %s\n", strerror(errno));
-    exit(EXIT_PROGRAM_ERROR);
+    exit(EXIT_PLATFORM_ERROR);
   }
 
   /* Parent process. Wait for child to die. */

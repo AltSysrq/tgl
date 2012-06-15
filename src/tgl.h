@@ -8,9 +8,10 @@
 #include <stdio.h>
 
 #define EXIT_PROGRAM_ERROR 1
+#define EXIT_PLATFORM_ERROR 253
 #define EXIT_IO_ERROR 254
 #define EXIT_OUT_OF_MEMORY 255
-#define EXIT_HELP 253
+#define EXIT_HELP 2
 
 /* Globals */
 /* The name of the user library file. */
