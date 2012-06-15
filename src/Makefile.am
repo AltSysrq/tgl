@@ -14,7 +14,8 @@ BUILTIN_FILES = \
  builtins/stack_ops.c\
  builtins/string_ops.c\
  builtins/payload.c\
- builtins/secarg.c
+ builtins/secarg.c\
+ builtins/external.c
 
 tgl_SOURCES = tgl.c strings.c interp.c builtins.c $(BUILTIN_FILES)
 

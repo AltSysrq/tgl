@@ -21,9 +21,13 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
-AC_CHECK_FUNCS([memmove memset strerror])
+# We never malloc() or realloc() with size zero, so we don't need these
+# checks.
+dnl AC_FUNC_MALLOC
+dnl AC_FUNC_REALLOC
+AC_FUNC_FORK
+AC_TYPE_PID_T
+AC_CHECK_FUNCS([dup2 memmove memset strerror])
 AC_CHECK_FUNCS([getopt_long], AC_DEFINE(_GNU_SOURCE, [],
                               [Use GNU Extensions if available]))
 

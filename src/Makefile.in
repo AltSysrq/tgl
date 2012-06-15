@@ -50,7 +50,7 @@ am__objects_1 = context.$(OBJEXT) logical_ops.$(OBJEXT) \
 	defun.$(OBJEXT) ctrl_for.$(OBJEXT) quoting.$(OBJEXT) \
 	ctrl_while.$(OBJEXT) ctrl_if.$(OBJEXT) history.$(OBJEXT) \
 	stack_ops.$(OBJEXT) string_ops.$(OBJEXT) payload.$(OBJEXT) \
-	secarg.$(OBJEXT)
+	secarg.$(OBJEXT) external.$(OBJEXT)
 am_tgl_OBJECTS = tgl.$(OBJEXT) strings.$(OBJEXT) interp.$(OBJEXT) \
 	builtins.$(OBJEXT) $(am__objects_1)
 tgl_OBJECTS = $(am_tgl_OBJECTS)
@@ -185,7 +185,8 @@ BUILTIN_FILES = \
  builtins/stack_ops.c\
  builtins/string_ops.c\
  builtins/payload.c\
- builtins/secarg.c
+ builtins/secarg.c\
+ builtins/external.c
 
 tgl_SOURCES = tgl.c strings.c interp.c builtins.c $(BUILTIN_FILES)
 all: all-am
@@ -275,6 +276,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctrl_if.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctrl_while.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/defun.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/external.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/history.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/interp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logical_ops.Po@am__quote@
@@ -512,6 +514,20 @@ secarg.obj: builtins/secarg.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builtins/secarg.c' object='secarg.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o secarg.obj `if test -f 'builtins/secarg.c'; then $(CYGPATH_W) 'builtins/secarg.c'; else $(CYGPATH_W) '$(srcdir)/builtins/secarg.c'; fi`
+
+external.o: builtins/external.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external.o -MD -MP -MF $(DEPDIR)/external.Tpo -c -o external.o `test -f 'builtins/external.c' || echo '$(srcdir)/'`builtins/external.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/external.Tpo $(DEPDIR)/external.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builtins/external.c' object='external.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external.o `test -f 'builtins/external.c' || echo '$(srcdir)/'`builtins/external.c
+
+external.obj: builtins/external.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external.obj -MD -MP -MF $(DEPDIR)/external.Tpo -c -o external.obj `if test -f 'builtins/external.c'; then $(CYGPATH_W) 'builtins/external.c'; else $(CYGPATH_W) '$(srcdir)/builtins/external.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/external.Tpo $(DEPDIR)/external.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builtins/external.c' object='external.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external.obj `if test -f 'builtins/external.c'; then $(CYGPATH_W) 'builtins/external.c'; else $(CYGPATH_W) '$(srcdir)/builtins/external.c'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
