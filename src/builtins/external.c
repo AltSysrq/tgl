@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <ctype.h>
 
 #include "../tgl.h"
 #include "../strings.h"
@@ -282,4 +283,98 @@ int builtin_shell_command(interpreter* interp) {
   if (sargc)
     stack_push(interp, sargc);
   return 0;
+}
+
+/* @builtin-decl int builtin_sed(interpreter*) */
+/* @builtin-bind { 'j', builtin_sed }, */
+int builtin_sed(interpreter* interp) {
+  string input, output, sscript=NULL;
+  char* script, *argv[4];
+  unsigned begin;
+  int has_seen_middle_delim;
+  byte delim;
+
+  /* Read the script in */
+  begin = interp->ip + 1;
+  do {
+    /* Advance past r or ; */
+    ++interp->ip;
+    if (!is_ip_valid(interp) || !isalpha(curr(interp))) break;
+    ++interp->ip;
+    if (!is_ip_valid(interp)) {
+      /* The previous character wasn't part of the script */
+      --interp->ip;
+      break;
+    }
+
+    delim = curr(interp);
+    ++interp->ip;
+    has_seen_middle_delim = 0;
+
+    /* Read to the end of the script, other than flags */
+    while (is_ip_valid(interp) &&
+           (!has_seen_middle_delim || curr(interp) != delim)) {
+      if (curr(interp) == delim) has_seen_middle_delim = 1;
+      ++interp->ip;
+    }
+
+    if (!is_ip_valid(interp)) {
+      print_error("sed script runs past end of input");
+      return 0;
+    }
+
+    /* Advance past closing delimiter */
+    ++interp->ip;
+    /* Read flags */
+    while (is_ip_valid(interp) && isalpha(curr(interp)))
+      ++interp->ip;
+  } while (is_ip_valid(interp) && curr(interp) == ';');
+
+  /* Obtain input */
+  if (interp->ip == begin) {
+    if (!stack_pop_strings(interp, 2, &sscript, &input)) UNDERFLOW;
+  } else {
+    if (!(input = stack_pop(interp))) UNDERFLOW;
+  }
+
+  /* Extract the script */
+  if (sscript) {
+    script = tmalloc(sscript->len);
+    memcpy(script, string_data(sscript), sscript->len);
+    script[sscript->len] = 0;
+  } else {
+    script = tmalloc(interp->ip - begin);
+    memcpy(script, string_data(interp->code) + begin, interp->ip - begin);
+    script[interp->ip - begin] = 0;
+  }
+
+  /* Move the IP back one since it must be one character before the next
+   * command to execute.
+   */
+  --interp->ip;
+
+  /* Set argument vector up */
+  argv[0] = (getenv("TGL_SED")? getenv("TGL_SED") : "sed");
+  argv[1] = "-r";
+  argv[2] = script;
+  argv[3] = 0;
+
+  /* Execute and clean up */
+  output = invoke_external(argv, input);
+  free(script);
+
+  /* On error, restore stack and return failure */
+  if (!output) {
+    if (sscript)
+      stack_push(interp, sscript);
+    stack_push(interp, input);
+    return 0;
+  }
+
+  /* Otherwise, free input and return success */
+  stack_push(interp, output);
+  free(input);
+  if (sscript)
+    free(sscript);
+  return 1;
 }

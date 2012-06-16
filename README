@@ -288,7 +288,7 @@ Built-in commands are:
     program verbatim.
     Example:
       yu."echo" "hello" "world"B.  --> hello world
-  r...  (sed: input -> output, or input script -> output)
+  j...  (sed: input -> output, or input script -> output)
     Executes "sed -r" on the given input, pushing the output onto the stack. The
     script follows this extended regex:
       (${STATEMENT};\s*)*${STATEMENT}
@@ -296,7 +296,8 @@ Built-in commands are:
       ${STATEMENT} = [a-zA-Z](.)[^\1]*\1[^\1]*\1[a-zA-Z]*
     If no script is extracted, the script is instead popped off the stack,
     allowing for more complex sed scripts.
-  R     (perl: input script -> output)
+    The sed command can be overridden with the environment variable TGL_SED.
+  J     (perl: input script -> output)
     Invokes "perl -E" with the given script and standard input. The environment
     variable $TGL_PERL can be set to override the location of the perl
     executable.
