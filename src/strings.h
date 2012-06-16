@@ -65,6 +65,11 @@ int string_to_bool(string);
 /* Like string_to_bool(), but frees the string as well. */
 int string_to_bool_free(string);
 
+/* Converts the given string to a C-string. The returned C-string is
+ * dynamically allocated and must be freed by the caller.
+ */
+char* string_to_cstr(string);
+
 /* Converts the given integer to a string.
  *
  * The string must be freed by the caller.

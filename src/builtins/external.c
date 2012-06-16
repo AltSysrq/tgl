@@ -378,3 +378,34 @@ int builtin_sed(interpreter* interp) {
     free(sscript);
   return 1;
 }
+
+/* @builtin-decl int builtin_perl(interpreter*) */
+/* @builtin-bind { 'J', builtin_perl }, */
+int builtin_perl(interpreter* interp) {
+  string sscript, input, output;
+  char* script, *argv[4];
+
+  if (!stack_pop_strings(interp, 2, &sscript, &input)) UNDERFLOW;
+
+  /* Set argument vector up */
+  script = string_to_cstr(sscript);
+  argv[0] = (getenv("TGL_PERL")? getenv("TGL_PERL") : "perl");
+  argv[1] = "-E";
+  argv[2] = script;
+  argv[3] = NULL;
+
+  /* Invoke and clean up */
+  output = invoke_external(argv, input);
+  free(script);
+
+  if (!output) {
+    stack_push(interp, input);
+    stack_push(interp, sscript);
+    return 0;
+  }
+
+  stack_push(interp, output);
+  free(input);
+  free(sscript);
+  return 1;
+}

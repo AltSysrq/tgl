@@ -149,6 +149,13 @@ int string_to_bool_free(string s) {
   return result;
 }
 
+char* string_to_cstr(string s) {
+  char* c = tmalloc(s->len + 1);
+  memcpy(c, string_data(s), s->len);
+  c[s->len] = 0;
+  return c;
+}
+
 string int_to_string(signed i) {
   /* Assuming that ever byte is three digits will always be sufficient.
    * Then add one for sign and one for term NUL.
