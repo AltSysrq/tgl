@@ -1,4 +1,5 @@
 ; Example integration of TGL into Emacs.
+; Tested on: GNU Emacs 23
 
 (defun invoke-tgl-on-region (with-prefix)
 "Invokes tgl on the current region, or the current line if the region is not
