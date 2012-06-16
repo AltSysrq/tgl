@@ -200,8 +200,8 @@ int builtin_map(interpreter* interp) {
       return 0;
     }
 
-    /* Total length must be odd (2n mappings + 1 string) */
-    if (!(n&1)) {
+    /* Total length must be even (2n mappings) */
+    if (n&1) {
       print_error("Non-even number of mappings");
       return 0;
     }
