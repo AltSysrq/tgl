@@ -39,3 +39,8 @@ If with-prefix is non-nil, pass -p to tgl to look for prefix data."
 
 ; Bind smart-invoke-tgl-and-newline-and-indent to C-M-j
 (global-set-key "\e\C-j" 'smart-invoke-tgl-and-newline-and-indent)
+
+; Some modes (like the c-mode family) rebind M-j and C-M-j back to the same
+; thing. Prevent that from happening.
+(add-hook 'after-change-major-mode-hook
+          (lambda () (local-unset-key "\e\C-j")))
