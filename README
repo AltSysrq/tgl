@@ -275,7 +275,7 @@ Built-in commands are:
     Prefix for all data-payload commands. See the DATA PAYLOAD section for
     details.
   b     (shell-script: input script -> stdout)
-    Executes $SHELL -e <script>, and pushes its output onto the stack. The
+    Executes $SHELL -c <script>, and pushes its output onto the stack. The
     command inherits stderr from tgl. The command fails if the subprocess
     returns non-zero, or if the process cannot be started.
   B     (shell-command: input args{n} n -> output, or input args{???} -> output)

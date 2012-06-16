@@ -113,7 +113,7 @@ static string invoke_external(char** argv, string input) {
 
   /* OK, get output */
   output_length = lseek(output_fd, 0, SEEK_END);
-  if (output_length == -1) {
+  if (output_length == -1 || -1 == lseek(output_fd, 0, SEEK_SET)) {
     fprintf(stderr, "tgl: error: lseek: %s\n", strerror(errno));
     goto error;
   }
@@ -146,4 +146,43 @@ static string invoke_external(char** argv, string input) {
   if (input_file) fclose(input_file);
   if (output_file) fclose(output_file);
   return NULL;
+}
+
+/* @builtin-decl int builtin_shell_script(interpreter*) */
+/* @builtin-bind { 'b', builtin_shell_script }, */
+int builtin_shell_script(interpreter* interp) {
+  string input, sscript, output;
+  char* script, *argv[4];
+
+  if (!getenv("SHELL")) {
+    print_error("$SHELL undefined");
+    return 0;
+  }
+  if (!stack_pop_strings(interp, 2, &sscript, &input)) UNDERFLOW;
+
+  /* Copy script to NTBS */
+  script = tmalloc(sscript->len+1);
+  memcpy(script, string_data(sscript), sscript->len);
+  script[sscript->len] = 0;
+
+  /* Set arguments up */
+  argv[0] = getenv("SHELL");
+  argv[1] = "-c";
+  argv[2] = script;
+  argv[3] = NULL;
+  output = invoke_external(argv, input);
+  free(script);
+
+  /* If unsuccessful, restore the stack and we're done. */
+  if (!output) {
+    stack_push(interp, input);
+    stack_push(interp, sscript);
+    return 0;
+  }
+
+  /* OK, free the inputs and return success */
+  free(input);
+  free(sscript);
+  stack_push(interp, output);
+  return 1;
 }
