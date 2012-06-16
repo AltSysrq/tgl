@@ -197,6 +197,12 @@ Built-in commands are:
     Pushes the contents of register C to the stack.
   RC    (write: string -> ())
     Pops the top stack value into register C.
+  a     (auto-write: string -> ())
+    Pops a string and stores it into the register with an alphanumeric name
+    which has the earliest date of most recent usage. A string of the format
+      `%s: %c\n
+    (literal grave, no leading indendation, actual line-feed) is emitted to
+    inform the user of the assignment.
   p     (stash: () -> ())
     Pushes all registers onto a stack independent of the main one.
   P     (retrieve: () -> ())
