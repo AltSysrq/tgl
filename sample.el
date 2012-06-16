@@ -27,9 +27,9 @@ If with-prefix is non-nil, pass -p to tgl to look for prefix data."
    (exchange-point-and-mark t)
    (pop-mark)))
 
-; Call invoke-tgl-on-region, then either indent (if at BOL) or
-; newline-and-indent otherwise.
 (defun smart-invoke-tgl-and-newline-and-indent (with-prefix)
+"Call invoke-tgl-on-region, then either indent (if at BOL) or
+newline-and-indent otherwise."
   (interactive "P")
   (invoke-tgl-on-region with-prefix)
   (if (= (point)
