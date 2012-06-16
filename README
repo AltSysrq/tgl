@@ -460,6 +460,19 @@ Payload commands:
     done automatically if the payload data is executed when none has been
     extracted, though it can be used to reset the data to this.
 
+NOTES
+
+Some may find it odd that there is no comment syntax (though the (...);
+construct effectively does so), and that no support exists for UNIX #! notation
+(ie, to make a TGL script executable). This is a deliberate design decision. If
+you find yourself wanting to reuse TGL code in a way other than by throwing it
+to a command in your library, or need to explain what is happening, you are
+using the wrong tool.
+
+TGL should be considered as an extension to your editor, not as a programming
+language in its own right. If you try to use it as the latter, you'll be in for
+a world of problems.
+
 EXAMPLES
 
 Hello world:
