@@ -402,3 +402,56 @@ int builtin_perl(interpreter* interp) {
   free(sscript);
   return 1;
 }
+
+/* @builtin-decl int builtin_tcl(interpreter*) */
+/* @builtin-bind { 't', builtin_tcl }, */
+int builtin_tcl(interpreter* interp) {
+  int tempfile = -1;
+  char tempname[] = "tgltclXXXXXX", *argv[3];
+  string script, input, output;
+
+  if (!stack_pop_strings(interp, 2, &script, &input)) UNDERFLOW;
+
+  /* Tclsh is a bit odd in that it has no option to take its commands from the
+   * command line. We would use its stdin, except that that is already used by
+   * the user-supplied input. Therefore, write to a temporary file and invoke
+   * tclsh on it.
+   */
+  tempfile = mkstemp(tempname);
+  if (tempfile == -1) {
+    fprintf(stderr, "tgl: error: mkstemp: %s\n", strerror(errno));
+    goto error;
+  }
+
+  if (script->len != write(tempfile, string_data(script), script->len)) {
+    fprintf(stderr, "tgl: error: writing Tcl script: %s\n", strerror(errno));
+    goto error;
+  }
+
+  close(tempfile);
+  tempfile = -1;
+
+  /* Set argument vector up and invoke */
+  argv[0] = (getenv("TGL_TCL")? getenv("TGL_TCL") : "tclsh");
+  argv[1] = tempname;
+  argv[2] = NULL;
+  output = invoke_external(argv, input);
+
+  if (unlink(tempname))
+    fprintf(stderr, "tgl: warning: could not delete Tcl script %s: %s\n",
+            tempname, strerror(errno));
+
+  if (!output) goto error;
+
+  free(script);
+  free(input);
+  stack_push(interp, output);
+  return 1;
+
+  error:
+  stack_push(interp, input);
+  stack_push(interp, script);
+  if (tempfile != -1)
+    close(tempfile);
+  return 0;
+}

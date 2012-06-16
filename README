@@ -304,7 +304,7 @@ Built-in commands are:
   t     (tcl: input script -> output)
     Invokes "tclsh" with the given input and script, and pushes the output onto
     the stack. The executable name/path can be overriden with the environment
-    variable $TGL_TCLSH.
+    variable $TGL_TCL.
 
 REGISTER PERSISTENCE
 
