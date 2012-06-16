@@ -162,9 +162,7 @@ int builtin_shell_script(interpreter* interp) {
   if (!stack_pop_strings(interp, 2, &sscript, &input)) UNDERFLOW;
 
   /* Copy script to NTBS */
-  script = tmalloc(sscript->len+1);
-  memcpy(script, string_data(sscript), sscript->len);
-  script[sscript->len] = 0;
+  script = string_to_cstr(sscript);
 
   /* Set arguments up */
   argv[0] = getenv("SHELL");
@@ -245,11 +243,8 @@ int builtin_shell_command(interpreter* interp) {
    * here.
    */
   argv = tmalloc(sizeof(char*) * (argc+1));
-  for (i = 0; i < argc; ++i) {
-    argv[argc-i-1] = tmalloc(sargv[i]->len + 1);
-    memcpy(argv[argc-i-1], string_data(sargv[i]), sargv[i]->len);
-    argv[argc-i-1][sargv[i]->len] = 0;
-  }
+  for (i = 0; i < argc; ++i)
+    argv[argc-i-1] = string_to_cstr(sargv[i]);
   argv[argc] = NULL;
 
   /* Run the command, then immediately free memory before checking for error. */
@@ -339,9 +334,7 @@ int builtin_sed(interpreter* interp) {
 
   /* Extract the script */
   if (sscript) {
-    script = tmalloc(sscript->len);
-    memcpy(script, string_data(sscript), sscript->len);
-    script[sscript->len] = 0;
+    script = string_to_cstr(sscript);
   } else {
     script = tmalloc(interp->ip - begin);
     memcpy(script, string_data(interp->code) + begin, interp->ip - begin);
