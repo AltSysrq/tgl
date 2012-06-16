@@ -18,7 +18,11 @@ If with-prefix is non-nil, pass -p to tgl to look for prefix data."
             (end-of-line)
             (point)))))
    (shell-command-on-region begin end
-                            (if with-prefix "tgl -p" "tgl")
+                            (concat (if with-prefix "tgl -p" "tgl")
+                                    " -c "
+                                    (shell-quote-argument
+                                     (or (buffer-file-name)
+                                         "")))
                             t t
                             "* Tgl Errors *" t)
    ; Mark is left at the end of the output.
