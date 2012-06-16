@@ -186,3 +186,100 @@ int builtin_shell_script(interpreter* interp) {
   stack_push(interp, output);
   return 1;
 }
+
+/* @builtin-decl int builtin_shell_command(interpreter*) */
+/* @builtin-bind { 'B', builtin_shell_command }, */
+int builtin_shell_command(interpreter* interp) {
+  string* sargv=NULL, input=NULL, output, sargc=NULL;
+  char** argv;
+  signed argc;
+  unsigned i, stack_height;
+  stack_elt* elt;
+
+  if (interp->u[0]) {
+    if (!secondary_arg_as_int(interp->u[0], &argc, 0)) return 0;
+
+    stack_height = 0;
+    for (elt = interp->stack; elt; elt = elt->next)
+      ++stack_height;
+
+    if (argc >= stack_height) {
+      print_error("Invalid secondary argument");
+      return 0;
+    }
+
+    argc = stack_height - argc;
+
+    if (!argc) {
+      print_error("Empty shell command");
+      goto error;
+    }
+  } else {
+    if (!(sargc = stack_pop(interp))) UNDERFLOW;
+    if (!string_to_int(sargc, &argc)) {
+      print_error_s("Invalid integer", sargc);
+      goto error;
+    }
+    if (argc <= 0 || argc >= 4096) {
+      print_error_s("Invalid number of arguments", sargc);
+      goto error;
+    }
+  }
+
+  sargv = tmalloc(sizeof(string*) * argc);
+  if (!stack_pop_array(interp, argc, sargv)) {
+    print_error("Stack underflow");
+    free(sargv);
+    sargv = NULL;
+    goto error;
+  }
+
+  if (!(input = stack_pop(interp))) {
+    print_error("Stack underflow");
+    goto error;
+  }
+
+  /* Got all parms correctly, set argument vector up.
+   * Since the args were popped from right to left, the order must be reversed
+   * here.
+   */
+  argv = tmalloc(sizeof(char*) * (argc+1));
+  for (i = 0; i < argc; ++i) {
+    argv[argc-i-1] = tmalloc(sargv[i]->len + 1);
+    memcpy(argv[argc-i-1], string_data(sargv[i]), sargv[i]->len);
+    argv[argc-i-1][sargv[i]->len] = 0;
+  }
+  argv[argc] = NULL;
+
+  /* Run the command, then immediately free memory before checking for error. */
+  output = invoke_external(argv, input);
+  for (i = 0; i < argc; ++i)
+    free(argv[i]);
+  free(argv);
+
+  if (!output) goto error;
+
+  /* OK, clean up and return success */
+  for (i = 0; i < argc; ++i)
+    free(sargv[i]);
+  free(sargv);
+  if (sargc)
+    free(sargc);
+  free(input);
+  stack_push(interp, output);
+  reset_secondary_args(interp);
+  return 1;
+
+  error:
+  /* Restore stack, free memory, and return failure */
+  if (input)
+    stack_push(interp, input);
+  if (sargv) {
+    for (i = 0; i < argc; ++i)
+      stack_push(interp, sargv[i]);
+    free(sargv);
+  }
+  if (sargc)
+    stack_push(interp, sargc);
+  return 0;
+}
