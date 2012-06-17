@@ -745,6 +745,14 @@ static int payload_space_delimited(interpreter* interp) {
     free(interp->payload.value_delim);
 
   interp->payload.value_delim = PAYLOAD_WS_DELIM;
+  interp->payload.balance_paren =
+    interp->payload.balance_brack =
+    interp->payload.balance_brace =
+    interp->payload.trim_paren =
+    interp->payload.trim_brack =
+    interp->payload.trim_brace =
+    interp->payload.trim_space = 1;
+  interp->payload.balance_angle = interp->payload.trim_angle = 0;
   return 1;
 }
 
@@ -753,6 +761,14 @@ static int payload_line_delimited(interpreter* interp) {
     free(interp->payload.value_delim);
 
   interp->payload.value_delim = PAYLOAD_LINE_DELIM;
+  interp->payload.balance_paren =
+    interp->payload.balance_brack =
+    interp->payload.balance_brace =
+    interp->payload.trim_paren =
+    interp->payload.trim_brack =
+    interp->payload.trim_brace = 0;
+  interp->payload.trim_space = 1;
+  interp->payload.balance_angle = interp->payload.trim_angle = 0;
   return 1;
 }
 
@@ -763,6 +779,15 @@ static int payload_nul_delimited(interpreter* interp) {
     free(interp->payload.value_delim);
 
   interp->payload.value_delim = create_string(&nul, (&nul)+1);
+  interp->payload.balance_paren =
+    interp->payload.balance_brack =
+    interp->payload.balance_brace =
+    interp->payload.trim_paren =
+    interp->payload.trim_brack =
+    interp->payload.trim_brace =
+    interp->payload.trim_space =
+    interp->payload.balance_angle =
+    interp->payload.trim_angle = 0;
   return 1;
 }
 
