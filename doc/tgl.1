@@ -1,0 +1,1164 @@
+.Dd 16 June 2012
+.Dt TGL 1
+.Os
+.Sh NAME
+.Nm tgl
+.Nd Run the Text Generation Language interpreter
+.Sh SYNOPSIS
+.Nm
+.Op Fl h
+.Op Fl p
+.Op Fl c Ar context
+.Op Fl l Ar library
+.Op Fl r Ar file
+.Sh DESCRIPTION
+Runs the Text Generation Language interpreter on the script read from standard
+input.
+.Pp
+tgl supports the following options:
+.Bl -tag -width Ds
+.It Fl h
+Show usage and exit.
+.It Fl p
+Search for prefix payload data.
+.It Fl c Ar context
+Specify the current context (for conditional execution).
+.It Fl l Ar library
+Use the file specified by
+.Ar library
+(instead of ~/.tgl) for the user library.
+.It Fl r Ar file
+Use
+.Ar file
+(instead of ~/.tgl_registers) for register persistence.
+.El
+.Pp
+When Tgl starts up, it first restores registers from the register persistence
+file (by default, ~/.tgl_registers), then executes the user library if it
+exists (by default, ~/.tgl). Any errors in either of these steps are reported
+but otherwise ignored.
+.Pp
+The script to execute is then read from standard input, until EOF is
+reached. The script is then executed; if any error occurs, execution is
+aborted. If no errors are encountered, the final state of the registers is
+written back to the register persistence file.
+.Sh EXIT STATUS
+.Nm
+exits with status 0 on success. An exit status of 1 indicates failure due
+to an error in the input program. Stati 253--255 indicate failures due to
+external conditions.
+.Sh BASIC CONCEPTS
+.Ss VALUES
+Every value in Tgl is a string. A string is simply a sequence of arbitrary
+8-bit bytes of arbitrary length. Some commands will interpret the strings as
+integers or booleans. An integer is a string beginning with a
+.Qq +
+or
+.Qq - ,
+followed by any number of base-10 digits. Base-16 (hexadecimal) may be
+specified by prefixing the digits with
+.Qq 0x ,
+base-8 (octal) by
+.Qq 0o ,
+or base-2 (binary) by
+.Qq 0b .
+A boolean string is false if it is the empty string or if it is a valid
+representation of numeric zero. Any other string is considered true.
+.Ss STACK
+The stack is the primary method of passing data to and from commands. With few
+exceptions, all commands only pop values from and push values to the top of the
+stack. There is no limit on stack height, other than available memory. It is an
+error to try to pop from the stack when it is empty.
+.Ss REGISTERS
+Tgl provides the programmer with exactly 256 registers, each corresponding to a
+single byte value. Each register contains one string, and also stores its time
+of last access. Other than the history system, commands do not use registers
+except when doing so to present functionality to the user.
+.Pp
+Registers are all initialised to empty strings. When Tgl exits successfully, it
+will write the state of all registers to the register persistence file. This
+file is read back in the next time Tgl runs, so registers will preserve their
+values across invocations of Tgl.
+.Pp
+Registers 0x00..0x1F (ie, the byte values) are used to store command history,
+where register 0 is the most recently run command sequence. When TGL runs
+successfully and history was not suppressed, and the command sequence was not
+\(dqhX\(dq, the command sequence is added to the history by moving 0x00..0x1E
+each one register up, then inserted to register 0x00.
+.Ss SECONDARY ARGUMENTS
+Some commands take optional parameters via a secondary argument system. There
+are four secondary argument slots, called U0..U3. Unlike registers, they cannot
+be accessed directly, and may be null. Any command which takes secondary
+arguments nullifies all four slots after execution. There is also the secondary
+index, UX, which indicates which slot is used next. It starts at zero, and is
+incremented whenever a secondary argument is set. It is zeroed when a
+secondary-argument-using command completes execution.
+.Pp
+A secondary argument is considered
+.Qq set
+when UX has advanced beyond its own index. It is considered
+.Qq provided
+when it is set and non-null.
+.Pp
+Commands which use secondary arguments indicate such usage similar to the
+example below:
+.Dl Secondary: [value = default] [provided] (set?)
+.Pp
+Brackets indicate that the argument is considered if provided; parantheses, if
+set. Items of the format value=default indicate a property which has the given
+default if the argument is not provided, but which takes the value of any
+argument which is provided. Items of the format property? indicate booleans
+which are false unless the argument is provided or set (depending on whether
+brackets or parentheses are used), regardless of the argument's value. Any
+argument not noted is silently ignored.
+.Pp
+The
+.Li u
+(secondary-argument) command is used to set secondary arguments. What it
+does depends on the following character:
+.Bl -tag -width Ds
+.It %
+Pop a value from the main stack and use it to provide the next argument
+.It space
+Set the next argument to null
+.It digit
+Evaluate the following digits (using the number command) and use the result to
+provide the next argument
+.It "- +"
+Same as digit
+.It .
+Provides an integer corresponding to the current stack height as the next
+argument.
+.It other
+Create a one-character string with the given character and use it to provide
+the next argument
+.El
+.Ss PAYLOAD DATA
+In some cases, it is desirable to take data from a structured source, either
+embedded in the script itself, or extracted from an external source. The
+.Li ,
+command provides functionality to access and manipulate this payload data.
+.Pp
+Most commonly, one includes payload data within the script itself. Usually,
+payload data starts after the text
+.Qq ",$" ,
+though the delimiter can be changed. By passing the
+.Li -p
+(or
+.Li --prefix-payload )
+flag, it is also possible to include a payload at the beginning of input. In
+this case, code is considered to start after the first
+.Qq "|"
+(though initial whitespace (for the
+.Li "`"
+character within strings) still counts within the payload). Multiple pipes can
+be used to include the
+.Qq "|"
+within the payload; the first occurance that has the greatest number of
+pipes is used to separate the payload and the code.
+.Pp
+The first occurrance of a payload-data command which requires access to the
+payload will search for the start-of-payload delimiter (default
+.Qq ",$" )
+in the code if no payload is already present.
+.Ss COMMANDS
+All
+.Qq true commands
+in TGL are represented by a single character. Whenever the interpreter must
+execute a command, it looks at the character at the interpreter's current
+instruction pointer, and runs the associated command. All whitespace characters
+are implicitly considered no-op commands. If the command completes
+successfully, the instruction pointer is incremented.
+.Pp
+Builtin commands have access to all interpreter state, including the code and
+instruction pointer itself. Many commands will move the instruction pointer to
+effect control and quoting mechanisms. See the description for each command.
+.Ss CONTEXT
+TGL is run with a context (the empty string if not given) and maintains whether
+the context is active. The context is typically specified as a filename. Some
+commands only have effect if the context is active, allowing for language- or
+project-specific functionality.
+.Sh CATEGORICAL COMMAND REFERENCE
+.Ss STACK
+.Bl -tag -width Ds
+.It x (swap: a{depth} b -> b a{depth}, or b a{-depth} -> a{-depth} b)
+.Dl Secondary: [depth = 1]
+The top two items on the stack are swapped. With a secondary argument, this
+rolls the top element under that many items if positive, or moves an item at
+that depth to the top if negative.
+.It ":" (dupe: item -> item{times+1})
+.Dl Secondary: [times = 1]
+Pops an item from the stack, then pushes (times+1) copies of it onto the stack.
+.It ";" (drop: item{times} -> ())
+.Dl Secondary: [times = 1]
+Pops (times) items from the stack and discards them.
+.El
+.Ss STRINGS
+.Bl -tag -width Ds
+.It c (concat: a b -> ab)
+Pops two strings from the stack, concatenates them, and pushes the result.
+.It C (char-at: string index -> char)
+Pops a string and an index, and pushes the character within the string at that
+index. The first character is at index 0. Negative indices are relative to the
+end of the string.
+.It l (length: string -> length)
+Pops a string from the stack and pushes its length, in bytes.
+.It m (map: string {from to}{n} n -> result, or string ... -> result)
+.Dl Secondary: [stack-position-of-string = null]
+Translates each occurrance of
+.Ar from
+to the corresponding
+.Ar to
+in
+.Ar string
+such that no mappings interact. The number of mappings must be specified
+explicitly on the stack if no secondary argument is given; if one is given, it
+should be a
+.Li \(dqu.\(dq
+command after
+.Ar string
+but before the first mapping.
+.It s (substr: string from to -> length)
+Pops a string and two indices, evaluated the same was as in char-at, and pushes
+the portion of the string between
+.Ar from ,
+inclusive, to
+.Ar to ,
+exclusive.
+.It S (suffix: string from -> length)
+Same as substr, but assumes that
+.Ar to
+is the length of the string.
+.It y (empty-string: () -> \(dq\(dq)
+Pushes the empty string onto the stack.
+.It \(dq ... \(dq (string: ??? -> string)
+Pushes the characters between the double-quotes as a string onto the stack. The
+following characters are interpreted specially:
+.Bl -tag -width Ds
+.It \e
+Evaluates the
+.Li \e
+command at that point and splices the result into the string. Characters
+continue to be read after the point where
+.Li \e
+left off.
+.It "$"
+Interprets the following character as a register name; the value of this
+register is spliced into the string at that point.
+.It "%"
+Pops a value from the stack and splices it into the string at that point.
+.It "`"
+Inserts the string of whitespace characters that were present before the first
+non-whitespace character in the primary input.
+.El
+.It "'" C (char: () -> string)
+Pushes a single-character string, whose contents is the character following the
+command, to the stack. Note that since TGL is not Unicode-aware, this more
+strictly pushes a single
+.Em byte .
+For example, the code
+.Dl "'ß"
+will not push a string containing an Eszett, but rather (assuming UTF-8) a
+string containing the byte 0xC3; the interpreter will then try to execute
+command 0x9F.
+.It "(" ... ")" (code: () -> string)
+Pushes the string between the parentheses verbatim. The parentheses must be
+balanced; for example, the code
+.Dl "(foo (bar) baz)"
+pushes the string
+.Dl "foo (bar) baz"
+.It "." (print: string -> ())
+Pops a string from the stack and writes it verbatim to standard output.
+.It \e (escape: () -> string or () -> ())
+Pushes a single character as indicated by the following character(s).
+.Pp
+Control characters:
+.Bl -tag -width Ds
+.It \ea
+BEL
+.It \eb
+BS
+.It \ee
+ESC
+.It \ef
+FF
+.It \en
+LF
+.It \er
+CR
+.It \et
+HT
+.It \ev
+VT
+.It \ex##
+The byte represented by the hexadecimal integer
+.Ar ## .
+.El
+.Pp
+The following result in the character being escaped:
+.Dl \e\(dq \e\e \e$ \e% \e` \e'
+.Pp
+The following result in nothing (not even a string is pushed); they may be used
+for manual balancing of parentheses as required by some commands.
+.Dl \e( \e) \e[ \e] \e{ \e} \e< \e>
+.It "=" (equal: a b -> (a==b))
+Pops two strings and pushes a boolean indicating whether they are exactly
+equal.
+.It "!" (not-equal: a b -> (a!=b))
+Pops two strings and pushes a boolean indicating whether they are
+.Em not
+exactly equal.
+.It "{" (string-less: a b -> (a<b))
+Pops two strings and pushes a boolean indicating whether the left is less than
+(ASCIIbetically) the right.
+.It "}" (string-greater: a b -> (a>b))
+Pops two strings and pushes a boolean indicating whether the left is greater
+than (ASCIIbetically) the right.
+.El
+.Ss MATH
+.Bl -tag -width Ds
+.It "#/digit" ... (number: () -> integer)
+Reads an integer and pushes it onto the stack, stopping on the first
+non-digit. Any digit (0..9) is bound to this command; the # command also allows
+a leading sign before the number itself.
+.It ? (rand: () -> integer)
+Pushes a random integer between 0 and 65535, inclusive, onto the stack.
+.It "+" (add: a b -> (a+b))
+Pops two stack elements, interprets them as integers, and pushes their sum
+onto the stack.
+.It "-" (sub: a b -> (a-b))
+Pops two stack elements, interprets them as integers, and pushes their
+difference onto the stack.
+.It "*" (mul: a b -> (a*b))
+Pops two stack elements, interprets them as integers, and pushes their product
+onto the stack.
+.It "/" (div: a b -> (a/b))
+Pops two stack elements, interprets them as integers, and pushes their quotient
+onto the stack.
+.It "%" (mod: a b -> (a%b))
+Pops two stack elements, interprets them as integers, and pushes their
+remainder onto the stack.
+.It "<" (less: a b -> (a<b))
+Pops two integers and pushes a boolean indicating whether the left is less than
+the right.
+.It ">" (greater: a b -> (a>b))
+Pops two integers and pushes a boolean indicating whether the left is greater
+than the left.
+.It "&" (and: a b -> (a&&b))
+Pops two booleans and pushes the result of logical AND. Note that due to the
+nature of TGL this is not, and cannot be, short-circuiting.
+.It "|" (or: a b -> (a||b))
+Pops two booleans and pushes the result of logical OR. Note that due to the
+nature of TGL this is not, and cannot be, short-circuiting.
+.It "^" (xor: a b -> (a^b))
+Pops two booleans and pushes the result of logical XOR.
+.It "~" (not: a -> !a)
+Pops a boolean and pushes its negation.
+.El
+.Ss REGISTERS
+.Bl -tag -width Ds
+.It a (auto-write: value -> ())
+Pops a string and stores it into a register with an alphanumeric name. The
+register chosen is the one with the earliest date of last use. After writing
+the register, prints a string of the format
+.Dl "`%s: %c\en"
+indicating the value stored and the register it was stored in. (The first
+character is a literal grave quote, while the last one is a linefeed.)
+.It p (stash: () -> ())
+Pushes all registers onto a stack independent of the primary stack.
+.It P (retrieve: () -> ())
+Restores all registers as preserved by stash, removing that entry.
+.It r R (read: () -> value)
+Pushes the contents of register
+.Ar R
+onto the stack.
+.It R R (write: value -> ())
+Pops
+.Ar value
+from the stack and stores it into register
+.Ar R .
+.It u X (secondary-argument: () -> () or value -> ())
+The effect of this command depends on
+.Ar X .
+See SECONDARY ARGUMENTS above.
+.It z (stash-retrieve: code -> guarded-code)
+Pops
+.Ar code
+and places
+.Li p...P
+guards around it, so that no changes to registers occur due to execution of
+.Ar code
+(assuming it contains no \(dq,$\(dq).
+.El
+.Ss PAYLOAD
+All payload commands are prefixed with \(dq,\(dq.
+.Bl -tag -width Ds
+.It ",$" (payload-start: () -> ())
+Immediately moves the instruction pointer to the end of the current code,
+effectively stopping processing.
+.It ",c" (payload-curr: () -> elt)
+Pushes the string corresponding to the first element of the current payload
+data onto the stack.
+.It ",," (payload-next: () -> ())
+.Dl Secondary: [count = 1]
+Deletes the first
+.Ar count
+elements from the current payload data.
+.It ",;" (payload-next-kv: () -> ())
+.Dl Secondary: [count = 1]
+Deletes the first
+.Ar count
+pairs of elements from the current payload data.
+.It ",." (payload-print: () -> ())
+.Dl Secondary: [count = 1]
+Prints the first
+.Ar count
+elements of the payload data, separated by the current
+.Ar output-v-delimiter ,
+then deletes them. A
+.Ar count
+of zero indicates all elements.
+.It ",:" (payload-print-kv: () -> ())
+.Dl Secondary: [count = 1]
+Prints the first
+.Ar count
+key-value pairs of the payload data. Each key and value is separated by the
+current
+.Ar output-kv-delimiter ,
+and each pair is separated by the current
+.Ar output-kvs-delimiter .
+A
+.Ar count
+of zero indicates all pairs.
+.It ",r" (payload-read: () -> payload)
+Pushes the string representation of the current payload data onto the stack.
+.It ",R" (payload-write: payload -> ())
+Sets the current payload data to the string popped from the stack.
+.It ",h" (payload-length-bytes: () -> byte-count)
+Pushes an integer indicating how many bytes remain in the current payload
+data. Returns zero if and only if no elements remain in the current
+payload. (Thus the mnemonic
+.Em Has-more )
+.It ",e" (payload-each: ??? body -> ???)
+.Dl Secondary: [reg = \(dqp\(dq]
+For each value in the current payload, set
+.Ar reg
+to that value and execute
+.Ar body .
+This does not modify the current payload data. The result of the payload data
+having been altered after
+.Ar body
+exits is undefined.
+.It ",E" (payload-each-kv: ??? body -> ???)
+.Dl Secondary: [key-reg = \(dqk\(dq] [val-reg = \(dqv\(dq]
+For each key-value pair in the current payload, set
+.Ar key-reg
+to the key and
+.Ar val-reg
+to the value, then execute
+.Ar body .
+This does not modify the current payload data. The result of the payload data
+having been altered after
+.Ar body
+exits is undefined.
+.It ",i" (payload-datum-at-index: index -> value)
+Pushes the payload element at
+.Ar index ,
+where 0 is the index of the first element. This operation requires a linear
+scan of the payload data.
+.It ",I" (payload-num-indices: () -> count)
+Counts the number of elements in the current payload data and pushes the
+result. This operation requires a linear scan of the payload data.
+.It ",k" (payload-datum-at-key: key -> value)
+Pushes the first payload value element which follows the given key. This
+opretation requires a linear scan of the payload data.
+.It ",/" VV (payload-set-property: value -> ())
+Sets the property
+.Ar VV
+to
+.Ar value .
+Properties are:
+.Bl -hang -width Ds
+.It ps (payload-start, default \(dq,$\(dq)
+The delimiter that separates code from payload in the main body.
+.It vd (value-delimiter, default \(dqws\(dq (see \(dq,s\(dq))
+The delimiter that separates elements in the payload data.
+.It ov (output-v-delimiter, default \(dq, \(dq)
+The string to separate contiguous normal values on output.
+.It ok (output-kv-delimiter, default \(dq, \(dq)
+The string to separate keys from values on output.
+.It os (output-kvs-delimiter, default \(dq\en\(dq)
+The string to separate key-value pairs on output.
+.It b( b[ b{ b< (balance-paren)
+Set to any boolean. If true, delimiters are ignored when between yet-unbalanced
+pairs of the given type of parenthesis character. If false, the characters are
+treated normally. Default is true for ([{, false for <.
+.It t( t[ t{ t< (trim-paren)
+Set to any boolean. If true, up to one single matching pair of the given
+parenthesis type is trimmed from a value before extraction. This is performed
+after whitespace trimming, and no further trimming is done after this
+step. Default is true for ([{, false for <.
+.It ts (trim-space, default true)
+Set to any boolean. If true, extraneous spaces around values are trimmed when
+being extracted.
+.El
+.It ",?" VV (payload-get-property: () -> value)
+Pushes the current value of property
+.Ar VV .
+See \(dq,/\(dq.
+.It ",s" (payload-space-delimited: () -> ())
+Sets payload to be delimited by whitespace of any kind, combination, and
+abount. Resets balance and trim properties to defaults. If this mode is in use
+when payload is first extracted (or with any command which alters the payload),
+leading space in the payload is skipped. This is indicated in delimiter
+properties with the special string \(dqws\(dq.
+.It ",0" (payload-nul-delimited: () -> ())
+Sets payload to be delimited by NUL characters, and sets all balance and trim
+properties to false.
+.It ",l" (payload-line-delimited: () -> ())
+Sets the following strings:
+.Dl \(dq\en\(dq \(dq\er\(dq \(dq\er\en\(dq
+as the value delimiter, and sets all paren-related balancing and trimming to
+false. Space trimming is set to true.
+.It ",!" (payload-from-code: () -> ())
+Extracts the payload from the suffix from the top-level primary code, using the
+current
+.Ar payload-start
+delimiter. This is automatically done if no payload has ever been extracted
+when a command that accesses the payload data is run.
+.It ",f" (payload-from-file: filename -> ())
+Reads the entire contents of
+.Ar filename
+and uses it as payload data.
+.It ",F" (payload-from-glob: glob -> ())
+Accumulates all filenames matching
+.Ar glob
+and stores them into the payload data, NUL-delimited. Implicitly executes
+\(dq,0\(dq after.
+.El
+.Ss CONTROL STRUCTURES
+.Bl -tag -width Ds
+.It d (defun: name body -> ())
+Defines the command of the given name, which may be standard (one character
+long) or long (more than one character long). It is an error if it already
+exists. After execution of this command, the new command can be invoked in the
+normal manner (directly if a standard name, or with
+.Li Q...
+if it is long).
+.It D (defun-contextual: name body -> ())
+Like
+.Li defun
+except that nothing happens if the current context is not active.
+.It e (each: ??? string body -> ???)
+.Dl Secondary: [reg = \(dqc\(dq]
+For each character in
+.Ar string ,
+set
+.Ar reg
+to a string with that character as its only content, then execute
+.Ar body .
+.It f (for: ??? to body -> ???)
+.Dl Secondary: [from = 0] [reg = \(dqi\(dq] [increment = +1 or -1]
+Set
+.Ar reg
+to
+.Ar from .
+Execute
+.Ar body ,
+then add
+.Ar increment
+to
+.Ar reg .
+If
+.Ar reg
+has not moved to the other side of
+.Ar to
+from whence it started and is not equal to
+.Ar to ,
+the command repeats. If
+.Ar increment
+is not given, it defaults to +1 if
+.Ar to
+is greater than
+.Ar from ,
+or -1 otherwise.
+.It i (if: ??? condition then else -> ???)
+If
+.Ar condition
+is a true boolean, executes
+.Ar then ;
+otherwise, executes
+.Ar else .
+Other than the three arguments given, the effect on the interpreter is entirely
+dependent on the code executed. Note:
+.Ar condition
+is a
+.Em value ,
+not code to execute. The code
+.Dl "(1 2=)('y)('n)i."
+will print
+.Li \(dqy\(dq
+since
+.Li \(dq1 2=\(dq
+is a true string. For the desired effect, the code should read
+.Dl "1 2=('y)('n)i."
+.It I (if-short: ??? condition then -> ???)
+The same as
+.Li if
+except that it does nothing if
+.Ar condition
+is false.
+.It Q ... (long-command: ??? -> ???)
+Reads characters from the code until end of input or whitespace is
+encountered. These characters (excluding the leading
+.Qq Q )
+constitute a long command name. The command corresponding to this name is
+executed. The way the interpreter is affected depends entirely on what the
+command does.
+.It v (save-code: name code -> ())
+Creates a defun using the given name and code, executes it (the defun, not the
+code), and appends the definition to the user library if successful.
+.It V t (save-code-contextual: name code -> ())
+Like save-code, but also restricts the definition to the context indicated by
+.Ar t .
+If
+.Ar t
+is \(dqs\(dq, the whole context must match; if it is \(dqe\(dq, only the
+extension must match. No other values of
+.Ar t
+are permitted.
+.It w (while: ??? condition body -> ???)
+Executes
+.Ar condition
+and pops a value from the stack. If it is false, the command stops. Otherwise,
+.Ar body
+is executed and the command repeats. Notice that unlike
+.Li if ,
+.Ar condition
+is code to evaluate on each iteration, instead of a value by itself.
+.It W (while-short: ??? body -> ???)
+Executes
+.Ar code
+and pops a value from the stack. If it is true, the command repeats.
+.It X (eval: ??? code -> ???)
+Pops a string from the stack and evaluates it as TGL code. The way the
+interpreter is affected depends entirely on what the code does.
+.El
+.Ss CONTEXT
+All context commands are prefixed with
+.Li "@" .
+Any occurrance of
+.Qq ...
+in these commands indicates that a string is read until the next whitespace
+character. The string
+.Qq matches
+if the glob defined by the string which was read (see fnmatch(3)) matches the
+current context (as with
+.Fl c
+).
+.Bl -tag -width ds
+.It "@=" ... (context-set: () -> ())
+The context is made active if matches, inactive if does not match.
+.It "@!" ... (context-set-not: () -> ())
+The context is made inactive if matches, active if does not match.
+.It "@&" ... (context-and: () -> ())
+The context is made inactive if does not match.
+.It "@|" ... (context-or: () -> ())
+The context is made active if matches.
+.It "@^" ... (context-and-not: () -> ())
+The context is made inactive if matches.
+.It "@|" ... (context-or-not: () -> ())
+The context is made active if does not match.
+.It "@?" (context-active: () -> active-state)
+Pushes a boolean indicating whether the context is active.
+.It "@s" (context-query: () -> context)
+Pushes the current context itself.
+.It "@e" (context-extension: () -> extension)
+Pushes the filename extension of the context, including the leading dot, if
+present; otherwise, an empty string.
+.El
+.Ss HISTORY/LIBRARY
+.Bl -tag -width Ds
+.It h (history-access: () -> entry)
+.Dl Secondary: [off = 0]
+Accesses the item in history at (off+implicit).
+.Ar implicit
+begins at 0 and is incremented every time history-access is invoked.
+.It H (suppress-history: () -> ())
+Prevents the current code from being added to the history.
+.El
+.Ss EXTERNAL COMMANDS
+.Bl -tag -width Ds
+.It b (shell-script: input script -> output)
+Executes \(dq\
+.Ar $SHELL
+-c
+.Ar script \(dq
+using
+.Ar input
+as its standard input. Output is accumulated and pushed onto the stack when the
+command completes.
+.It B (shell-command: input args{n} n -> output, or input ... -> output)
+.Dl Secondary: [stack-depth-of-input = null]
+Execute the given shell command, the arguments pushed in the order they will be
+used. The first argument is the command to run. No additional processing is
+performed on the arguments given: They are passed to the program verbatim (this
+means, for example, that no quoting is necessary). Example:
+.Dl yu.\(dqecho\(dq \(dqhello\(dq \(dqworld\(dqB.  --> hello world
+Standard input is provided by
+.Ar input ;
+standard output is accumulated into
+.Ar output
+and pushed when the command completes.
+.It j ... (sed: input -> output, or input script -> output)
+Executes \(dqsed -r\(dq on the given input, pushing the output onto the
+stack. The script is normally read in after the command name itself, and
+follows this pseudo-extended-regex:
+.Dl (${STATEMENT};\es*)*${STATEMENT}
+where
+.Dl ${STATEMENT} = [a-zA-Z](.)[^\e1]*\e1[^\e1]*\e1[a-zA-Z]*
+If no script follows the command, it is instead popped from the stack. The
+environment variable
+.Ar TGL_SED
+can be used to override the name of the sed command.
+.It J (perl: input script -> output)
+INvokes \(dqperl -E\(dq with the given script and standard input. The
+environment variable
+.Ar TGL_PERL
+can be set to override the location of the perl executable.
+.It t (tcl: input script -> output)
+Invokes \(dqtclsh\(dq with the given input and script, and pushes the output
+onto the stack. The executable name can be overridden with the environment
+variable
+.Ar TGL_TCL .
+.El
+.Sh COMMAND INDEX
+.Ss BY INVOCATION
+.Bl -tag -width Ds
+.It a
+auto-write
+.It b
+shell-script
+.It B
+shell-command
+.It c
+concat
+.It C
+char-at
+.It d
+defun
+.It D
+defun-contextual
+.It e
+each
+.It f
+for
+.It h
+history-access
+.It H
+suppress-history
+.It i
+if
+.It I
+if-short
+.It j
+sed
+.It J
+perl
+.It l
+length
+.It m
+map
+.It Q
+long-command
+.It p
+stash
+.It P
+retrieve
+.It r
+read
+.It R
+write
+.It s
+substr
+.It S
+suffix
+.It t
+tcl
+.It u
+secondary-argument
+.It v
+save-code
+.It V
+save-code-contextual
+.It w
+while
+.It W
+while-short
+.It x
+swap
+.It X
+eval
+.It y
+empty-string
+.It z
+stash-retrieve
+.It "!"
+not-equal
+.It \(dq
+string
+.It "#"
+number
+.It "%"
+mod
+.It "&"
+and
+.It "'"
+char
+.It "("
+code
+.It "*"
+mul
+.It "+"
+add
+.It ",0"
+payload-nul-delimited
+.It ",c"
+payload-curr
+.It ",e"
+payload-each
+.It ",E"
+payload-each-kv
+.It ",f"
+payload-from-file
+.It ",F"
+payload-from-glob
+.It ",h"
+payload-length-bytes
+.It ",i"
+payload-datum-at-index
+.It ",k"
+payload-datum-at-key
+.It ",l"
+payload-line-delimited
+.It ",l"
+payload-num-indices
+.It ",r"
+payload-read
+.It ",R"
+payload-write
+.It ",s"
+payload-space-delimited
+.It ",!"
+payload-from-code
+.It ",$"
+payload-start
+.It ",,"
+payload-next
+.It ",."
+payload-print
+.It ",/"
+payload-set-property
+.It ",:"
+payload-print-kv
+.It ",;"
+payload-next-kv
+.It ",?"
+payload-get-property
+.It "-"
+sub
+.It "."
+print
+.It "/"
+div
+.It digit
+number
+.It ":"
+dupe
+.It ";"
+drop
+.It "<"
+less
+.It "="
+equal
+.It ">"
+greater
+.It ?
+rand
+.It "@="
+context-set
+.It "@!"
+context-set-not
+.It "@&"
+context-and
+.It "@|"
+context-or
+.It "@^"
+context-and-not
+.It "@v"
+context-or-not
+.It "@?"
+context-active
+.It "@s"
+context-query
+.It "@e"
+context-extension
+.It \e
+escape
+.It "^"
+xor
+.It "{"
+string-less
+.It "|"
+or
+.It "}"
+string-greater
+.It "~"
+not
+.El
+.Ss BY NAME
+.Bl -hang -width "loooooooooooooooooooooooooong"
+.It add
+.Li "+"
+.It and
+.Li "&"
+.It auto-write
+.Li a
+.It char
+.Li "'"
+.It char-at
+.Li C
+.It code
+.Li "("
+.It concat
+.Li c
+.It context-active
+.Li "@?"
+.It context-and
+.Li "@&"
+.It context-and-not
+.Li "@^"
+.It context-extension
+.Li "@e"
+.It context-or
+.Li "@|"
+.It context-or-not
+.Li "@v"
+.It context-query
+.Li "@s"
+.It context-set
+.Li "@="
+.It context-set-not
+.Li "@!"
+.It defun
+.Li d
+.It defun-contextual
+.Li D
+.It div
+.Li "/"
+.It drop
+.Li ";"
+.It dupe
+.Li ":"
+.It each
+.Li e
+.It escape
+.Li \e
+.It for
+.Li f
+.It empty-string
+.Li y
+.It equal
+.Li "!"
+.It eval
+.Li X
+.It greater
+.Li ">"
+.It history
+.Li h
+.It if
+.Li i
+.It if-short
+.Li I
+.It length
+.Li l
+.It less
+.Li "<"
+.It long-command
+.Li Q
+.It map
+.Li m
+.It mul
+.Li "*"
+.It not
+.Li "~"
+.It not-equal
+.Li "!"
+.It number
+.Li Any of: "#0123456789"
+.It or
+.Li "|"
+.It payload-curr
+.Li ",c"
+.It payload-datum-at-index
+.Li ",i"
+.It payload-datum-at-key
+.Li ",k"
+.It payload-each
+.Li ",e"
+.It payload-each-kv
+.Li ",E"
+.It payload-from-code
+.Li ",!"
+.It payload-from-file
+.Li ",f"
+.It payload-from-glob
+.Li ",F"
+.It payload-get-property
+.Li ",?"
+.It payload-length-bytes
+.Li ",h"
+.It payload-line-delimited
+.Li ",l"
+.It payload-next
+.Li ",,"
+.It payload-next-kv
+.Li ",;"
+.It payload-nul-delimited
+.Li ",0"
+.It payload-num-indices
+.Li ",I"
+.It payload-print
+.Li ",."
+.It payload-print-kv
+.Li ",:"
+.It payload-read
+.Li ",r"
+.It payload-set-property
+.Li ",/"
+.It payload-space-delimited
+.Li ",s"
+.It payload-start
+.Li ",$"
+.It payload-write
+.Li ",R"
+.It perl
+.Li J
+.It print
+.Li "."
+.It rand
+.Li ?
+.It read
+.Li r
+.It retrieve
+.Li P
+.It save-code
+.Li v
+.It save-code-contextual
+.Li V
+.It secondary-argument
+.Li u
+.It sed
+.Li j
+.It shell-command
+.Li B
+.It shell-script
+.Li b
+.It stash
+.Li p
+.It stash-retrieve
+.Li z
+.It string
+.Li \(dq
+.It string-greater
+.Li "}"
+.It string-less
+.Li "{"
+.It sub
+.Li "-"
+.It substr
+.Li s
+.It suffix
+.Li S
+.It suppress-history
+.Li H
+.It swap
+.Li x
+.It tcl
+.Li t
+.It while
+.Li w
+.It while-short
+.Li W
+.It write
+.Li R
+.It xor
+.Li "^"
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width Ds
+.It SHELL
+The command to use to run shell commands.
+.It TGL_SED
+The command to use instead of
+.Qq sed
+for the
+.Li sed
+builtin.
+.It TGL_PERL
+The command to use instead of
+.Qq perl
+for the
+.Li perl
+builtin.
+.It TGL_TCL
+The command to use instead of
+.Qq tclsh
+for the
+.Li tcl
+builtin.
+.El
+.Sh FILES
+.Bl -tag -width Ds
+.It "~/.tgl"
+The default location of the user library. This is a TGL script which is
+automatically read when TGL starts, and any commands affecting the library
+write to it. It can be overridden with the
+.Li -l
+parameter.
+.It "~/.tgl_registers"
+The default location of the register persistence file. This is a binary file
+used to save and restore registers between invocations of TGL.
+.El
+.Sh EXAMPLES
+.Ss HELLO WORLD
+.Bd -literal
+  \(dqHello, world!\(dq.
+.Ed
+.Ss 99 BOTTLES OF BEER
+.Bd -literal
+  99Rc\(dqbottles\(dqRBrcRC(rc#-1>)(
+  \(dq$C $B of beer on the wall\en$C $B of beer\en\(dq.
+  rc1-Rc
+  rc1=(\(dqbottle\(dq)(\(dqbottles\(dq)iRBrc0=(\(dqNo more\(dq)(rc)iRC
+  rc#-1=(
+    \(dqGo to the store, buy some more\en99 bottles of beer on the wall\en\(dq
+  )(
+    \(dqTake one down, pass it around\en$C $B of beer on the wall\en\(dq
+  )i.)w
+.Ed
+.Ss CASE STATEMENTS, HISTORY
+Quickly generate case statements for each digit:
+.Dl  10(\(dq`case '$i':\en\(dq.)f
+.Pp
+Save the previous to a language-specific macro:
+.Dl  \(dqnc\(dqhzVe
+.Pp
+Resusing the new macro:
+.Dl  Qnc
+.Ss CONTEXT
+Creating a macro to place strings into C-strings (quoting and escaping):
+.Bd -literal
+  @=*.h @|*.c
+  \(dqcq\(dq (u.\e\e(\e\e)\en(\en)\er(\er)\et(\et)\e\(dq(\e\(dq)\ee(\ee)\ef(\ef)\ev(\ev)m\(dq\e\(dq%\e\(dq\(dq) D
+.Ed

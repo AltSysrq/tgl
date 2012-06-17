@@ -1,0 +1,27 @@
+Installing TGL
+
+Dependencies:
+You only need a C compiler and the standard UNIX utilities to build TGL. TGL
+has commands for running Perl and Tcl; you will obviously need those programs
+in order to use those commands, but they are otherwise not required for
+anything.
+
+Building:
+You can compile TGL by running
+  ./configure
+  make
+
+Installing:
+Just run
+  make install
+or
+  sudo make install
+Integrating into your favourite editor is generally more a question of your
+user configuration than being installed, so see the files under doc/examples
+for information on integrating with various editors.
+
+Uninstalling:
+Like installing:
+  make uninstall
+or
+  sudo make uninstall
