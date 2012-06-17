@@ -1,32 +1,62 @@
+Installing TGL
+
+Dependencies:
+You only need a C compiler and the standard UNIX utilities to build TGL. TGL
+has commands for running Perl and Tcl; you will obviously need those programs
+in order to use those commands, but they are otherwise not required for
+anything.
+
+Building:
+You can compile TGL by running
+  ./configure
+  make
+
+Installing:
+Just run
+  make install
+or
+  sudo make install
+Integrating into your favourite editor is generally more a question of your
+user configuration than being installed, so see the files under doc/examples
+for information on integrating with various editors.
+
+Uninstalling:
+Like installing:
+  make uninstall
+or
+  sudo make uninstall
+
+Manual page follows:
+
 TGL(1)                    BSD General Commands Manual                   TGL(1)
 
-NNAAMMEE
-     ttggll -- Run the Text Generation Language interpreter
+NAME
+     tgl — Run the Text Generation Language interpreter
 
-SSYYNNOOPPSSIISS
-     ttggll [--hh] [--pp] [--cc _c_o_n_t_e_x_t] [--ll _l_i_b_r_a_r_y] [--rr _f_i_l_e]
+SYNOPSIS
+     tgl [-h] [-p] [-c context] [-l library] [-r file]
 
-DDEESSCCRRIIPPTTIIOONN
+DESCRIPTION
      Runs the Text Generation Language interpreter on the script read from
      standard input.
 
      tgl supports the following options:
 
-     --hh      Show usage and exit.
+     -h      Show usage and exit.
 
-     --pp      Search for prefix payload data.
+     -p      Search for prefix payload data.
 
-     --cc _c_o_n_t_e_x_t
+     -c context
              Specify the current context (for conditional execution).
 
-     --ll _l_i_b_r_a_r_y
-             Use the file specified by _l_i_b_r_a_r_y (instead of ~/.tgl) for the
+     -l library
+             Use the file specified by library (instead of ~/.tgl) for the
              user library.
 
-     --rr _f_i_l_e
-             Use _f_i_l_e (instead of ~/.tgl_registers) for register persistence.
+     -r file
+             Use file (instead of ~/.tgl_registers) for register persistence.
 
-     When Tgl starts up, it first restores registers from the register persis-
+     When Tgl starts up, it first restores registers from the register persis‐
      tence file (by default, ~/.tgl_registers), then executes the user library
      if it exists (by default, ~/.tgl). Any errors in either of these steps
      are reported but otherwise ignored.
@@ -36,55 +66,55 @@ DDEESSCCRRIIPPTTIIOONN
      aborted. If no errors are encountered, the final state of the registers
      is written back to the register persistence file.
 
-EEXXIITT SSTTAATTUUSS
-     ttggll exits with status 0 on success. An exit status of 1 indicates failure
+EXIT STATUS
+     tgl exits with status 0 on success. An exit status of 1 indicates failure
      due to an error in the input program. Stati 253--255 indicate failures
      due to external conditions.
 
-BBAASSIICC CCOONNCCEEPPTTSS
-   VVAALLUUEESS
-     Every value in Tgl is a string. A string is simply a sequence of arbi-
+BASIC CONCEPTS
+   VALUES
+     Every value in Tgl is a string. A string is simply a sequence of arbi‐
      trary 8-bit bytes of arbitrary length. Some commands will interpret the
      strings as integers or booleans. An integer is a string beginning with a
-     "+" or "-", followed by any number of base-10 digits. Base-16 (hexadeci-
+     "+" or "-", followed by any number of base-10 digits. Base-16 (hexadeci‐
      mal) may be specified by prefixing the digits with "0x", base-8 (octal)
      by "0o", or base-2 (binary) by "0b".  A boolean string is false if it is
      the empty string or if it is a valid representation of numeric zero. Any
      other string is considered true.
 
-   SSTTAACCKK
+   STACK
      The stack is the primary method of passing data to and from commands.
      With few exceptions, all commands only pop values from and push values to
      the top of the stack. There is no limit on stack height, other than
      available memory. It is an error to try to pop from the stack when it is
      empty.
 
-   RREEGGIISSTTEERRSS
-     Tgl provides the programmer with exactly 256 registers, each correspond-
+   REGISTERS
+     Tgl provides the programmer with exactly 256 registers, each correspond‐
      ing to a single byte value. Each register contains one string, and also
      stores its time of last access. Other than the history system, commands
      do not use registers except when doing so to present functionality to the
      user.
 
-     Registers are all initialised to empty strings. When Tgl exits success-
-     fully, it will write the state of all registers to the register persis-
-     tence file. This file is read back in the next time Tgl runs, so regis-
+     Registers are all initialised to empty strings. When Tgl exits success‐
+     fully, it will write the state of all registers to the register persis‐
+     tence file. This file is read back in the next time Tgl runs, so regis‐
      ters will preserve their values across invocations of Tgl.
 
-     Registers 0x00..0x1F (ie, the byte values) are used to store command his-
+     Registers 0x00..0x1F (ie, the byte values) are used to store command his‐
      tory, where register 0 is the most recently run command sequence. When
      TGL runs successfully and history was not suppressed, and the command
      sequence was not "hX", the command sequence is added to the history by
      moving 0x00..0x1E each one register up, then inserted to register 0x00.
 
-   SSEECCOONNDDAARRYY AARRGGUUMMEENNTTSS
+   SECONDARY ARGUMENTS
      Some commands take optional parameters via a secondary argument system.
      There are four secondary argument slots, called U0..U3. Unlike registers,
      they cannot be accessed directly, and may be null. Any command which
      takes secondary arguments nullifies all four slots after execution. There
      is also the secondary index, UX, which indicates which slot is used next.
      It starts at zero, and is incremented whenever a secondary argument is
-     set. It is zeroed when a secondary-argument-using command completes exe-
+     set. It is zeroed when a secondary-argument-using command completes exe‐
      cution.
 
      A secondary argument is considered "set" when UX has advanced beyond its
@@ -94,12 +124,12 @@ BBAASSIICC CCOONNCCEEPPTTSS
      example below:
            Secondary: [value = default] [provided] (set?)
 
-     Brackets indicate that the argument is considered if provided; paranthe-
+     Brackets indicate that the argument is considered if provided; paranthe‐
      ses, if set. Items of the format value=default indicate a property which
      has the given default if the argument is not provided, but which takes
-     the value of any argument which is provided. Items of the format prop-
+     the value of any argument which is provided. Items of the format prop‐
      erty? indicate booleans which are false unless the argument is provided
-     or set (depending on whether brackets or parentheses are used), regard-
+     or set (depending on whether brackets or parentheses are used), regard‐
      less of the argument's value. Any argument not noted is silently ignored.
 
      The u (secondary-argument) command is used to set secondary arguments.
@@ -121,15 +151,15 @@ BBAASSIICC CCOONNCCEEPPTTSS
      other   Create a one-character string with the given character and use it
              to provide the next argument
 
-   PPAAYYLLOOAADD DDAATTAA
+   PAYLOAD DATA
      In some cases, it is desirable to take data from a structured source,
      either embedded in the script itself, or extracted from an external
      source. The , command provides functionality to access and manipulate
      this payload data.
 
-     Most commonly, one includes payload data within the script itself. Usu-
+     Most commonly, one includes payload data within the script itself. Usu‐
      ally, payload data starts after the text ",$", though the delimiter can
-     be changed. By passing the -p (or --prefix-payload) flag, it is also pos-
+     be changed. By passing the -p (or --prefix-payload) flag, it is also pos‐
      sible to include a payload at the beginning of input. In this case, code
      is considered to start after the first "|" (though initial whitespace
      (for the ` character within strings) still counts within the payload).
@@ -141,11 +171,11 @@ BBAASSIICC CCOONNCCEEPPTTSS
      the payload will search for the start-of-payload delimiter (default ",$")
      in the code if no payload is already present.
 
-   CCOOMMMMAANNDDSS
-     All "true commands" in TGL are represented by a single character. When-
+   COMMANDS
+     All "true commands" in TGL are represented by a single character. When‐
      ever the interpreter must execute a command, it looks at the character at
      the interpreter's current instruction pointer, and runs the associated
-     command. All whitespace characters are implicitly considered no-op com-
+     command. All whitespace characters are implicitly considered no-op com‐
      mands. If the command completes successfully, the instruction pointer is
      incremented.
 
@@ -154,14 +184,14 @@ BBAASSIICC CCOONNCCEEPPTTSS
      pointer to effect control and quoting mechanisms. See the description for
      each command.
 
-   CCOONNTTEEXXTT
+   CONTEXT
      TGL is run with a context (the empty string if not given) and maintains
      whether the context is active. The context is typically specified as a
-     filename. Some commands only have effect if the context is active, allow-
+     filename. Some commands only have effect if the context is active, allow‐
      ing for language- or project-specific functionality.
 
-CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCCEE
-   SSTTAACCKK
+CATEGORICAL COMMAND REFERENCE
+   STACK
      x (swap: a{depth} b -> b a{depth}, or b a{-depth} -> a{-depth} b)
                    Secondary: [depth = 1]
              The top two items on the stack are swapped. With a secondary
@@ -177,7 +207,7 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
                    Secondary: [times = 1]
              Pops (times) items from the stack and discards them.
 
-   SSTTRRIINNGGSS
+   STRINGS
      c (concat: a b -> ab)
              Pops two strings from the stack, concatenates them, and pushes
              the result.
@@ -192,19 +222,19 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
 
      m (map: string {from to}{n} n -> result, or string ... -> result)
                    Secondary: [stack-position-of-string = null]
-             Translates each occurrance of _f_r_o_m to the corresponding _t_o in
-             _s_t_r_i_n_g such that no mappings interact. The number of mappings
-             must be specified explicitly on the stack if no secondary argu-
+             Translates each occurrance of from to the corresponding to in
+             string such that no mappings interact. The number of mappings
+             must be specified explicitly on the stack if no secondary argu‐
              ment is given; if one is given, it should be a "u." command after
-             _s_t_r_i_n_g but before the first mapping.
+             string but before the first mapping.
 
      s (substr: string from to -> length)
              Pops a string and two indices, evaluated the same was as in char-
-             at, and pushes the portion of the string between _f_r_o_m, inclusive,
-             to _t_o, exclusive.
+             at, and pushes the portion of the string between from, inclusive,
+             to to, exclusive.
 
      S (suffix: string from -> length)
-             Same as substr, but assumes that _t_o is the length of the string.
+             Same as substr, but assumes that to is the length of the string.
 
      y (empty-string: () -> "")
              Pushes the empty string onto the stack.
@@ -231,7 +261,7 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
      ' C (char: () -> string)
              Pushes a single-character string, whose contents is the character
              following the command, to the stack. Note that since TGL is not
-             Unicode-aware, this more strictly pushes a single _b_y_t_e.  For
+             Unicode-aware, this more strictly pushes a single byte.  For
              example, the code
                    'ß
              will not push a string containing an Eszett, but rather (assuming
@@ -239,7 +269,7 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
              then try to execute command 0x9F.
 
      (...) (code: () -> string)
-             Pushes the string between the parentheses verbatim. The parenthe-
+             Pushes the string between the parentheses verbatim. The parenthe‐
              ses must be balanced; for example, the code
                    (foo (bar) baz)
              pushes the string
@@ -250,7 +280,7 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
              output.
 
      \ (escape: () -> string or () -> ())
-             Pushes a single character as indicated by the following charac-
+             Pushes a single character as indicated by the following charac‐
              ter(s).
 
              Control characters:
@@ -271,7 +301,7 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
 
              \v      VT
 
-             \x##    The byte represented by the hexadecimal integer _#_#.
+             \x##    The byte represented by the hexadecimal integer ##.
 
              The following result in the character being escaped:
                    \" \\ \$ \% \` \'
@@ -287,7 +317,7 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
 
      ! (not-equal: a b -> (a!=b))
              Pops two strings and pushes a boolean indicating whether they are
-             _n_o_t exactly equal.
+             not exactly equal.
 
      { (string-less: a b -> (a<b))
              Pops two strings and pushes a boolean indicating whether the left
@@ -297,7 +327,7 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
              Pops two strings and pushes a boolean indicating whether the left
              is greater than (ASCIIbetically) the right.
 
-   MMAATTHH
+   MATH
      #/digit ... (number: () -> integer)
              Reads an integer and pushes it onto the stack, stopping on the
              first non-digit. Any digit (0..9) is bound to this command; the #
@@ -337,12 +367,12 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
 
      & (and: a b -> (a&&b))
              Pops two booleans and pushes the result of logical AND. Note that
-             due to the nature of TGL this is not, and cannot be, short-cir-
+             due to the nature of TGL this is not, and cannot be, short-cir‐
              cuiting.
 
      | (or: a b -> (a||b))
              Pops two booleans and pushes the result of logical OR. Note that
-             due to the nature of TGL this is not, and cannot be, short-cir-
+             due to the nature of TGL this is not, and cannot be, short-cir‐
              cuiting.
 
      ^ (xor: a b -> (a^b))
@@ -351,11 +381,11 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
      ~ (not: a -> !a)
              Pops a boolean and pushes its negation.
 
-   RREEGGIISSTTEERRSS
+   REGISTERS
      a (auto-write: value -> ())
              Pops a string and stores it into a register with an alphanumeric
              name. The register chosen is the one with the earliest date of
-             last use. After writing the register, prints a string of the for-
+             last use. After writing the register, prints a string of the for‐
              mat
                    `%s: %c\n
              indicating the value stored and the register it was stored in.
@@ -371,52 +401,52 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
              entry.
 
      r R (read: () -> value)
-             Pushes the contents of register _R onto the stack.
+             Pushes the contents of register R onto the stack.
 
      R R (write: value -> ())
-             Pops _v_a_l_u_e from the stack and stores it into register _R.
+             Pops value from the stack and stores it into register R.
 
      u X (secondary-argument: () -> () or value -> ())
-             The effect of this command depends on _X.  See SECONDARY ARGUMENTS
+             The effect of this command depends on X.  See SECONDARY ARGUMENTS
              above.
 
      z (stash-retrieve: code -> guarded-code)
-             Pops _c_o_d_e and places p...P guards around it, so that no changes
-             to registers occur due to execution of _c_o_d_e (assuming it contains
+             Pops code and places p...P guards around it, so that no changes
+             to registers occur due to execution of code (assuming it contains
              no ",$").
 
-   PPAAYYLLOOAADD
+   PAYLOAD
      All payload commands are prefixed with ",".
 
      ,$ (payload-start: () -> ())
-             Immediately moves the instruction pointer to the end of the cur-
+             Immediately moves the instruction pointer to the end of the cur‐
              rent code, effectively stopping processing.
 
      ,c (payload-curr: () -> elt)
-             Pushes the string corresponding to the first element of the cur-
+             Pushes the string corresponding to the first element of the cur‐
              rent payload data onto the stack.
 
      ,, (payload-next: () -> ())
                    Secondary: [count = 1]
-             Deletes the first _c_o_u_n_t elements from the current payload data.
+             Deletes the first count elements from the current payload data.
 
      ,; (payload-next-kv: () -> ())
                    Secondary: [count = 1]
-             Deletes the first _c_o_u_n_t pairs of elements from the current pay-
+             Deletes the first count pairs of elements from the current pay‐
              load data.
 
      ,. (payload-print: () -> ())
                    Secondary: [count = 1]
-             Prints the first _c_o_u_n_t elements of the payload data, separated by
-             the current _o_u_t_p_u_t_-_v_-_d_e_l_i_m_i_t_e_r, then deletes them. A _c_o_u_n_t of
+             Prints the first count elements of the payload data, separated by
+             the current output-v-delimiter, then deletes them. A count of
              zero indicates all elements.
 
      ,: (payload-print-kv: () -> ())
                    Secondary: [count = 1]
-             Prints the first _c_o_u_n_t key-value pairs of the payload data. Each
-             key and value is separated by the current _o_u_t_p_u_t_-_k_v_-_d_e_l_i_m_i_t_e_r,
-             and each pair is separated by the current _o_u_t_p_u_t_-_k_v_s_-_d_e_l_i_m_i_t_e_r.
-             A _c_o_u_n_t of zero indicates all pairs.
+             Prints the first count key-value pairs of the payload data. Each
+             key and value is separated by the current output-kv-delimiter,
+             and each pair is separated by the current output-kvs-delimiter.
+             A count of zero indicates all pairs.
 
      ,r (payload-read: () -> payload)
              Pushes the string representation of the current payload data onto
@@ -429,25 +459,25 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
      ,h (payload-length-bytes: () -> byte-count)
              Pushes an integer indicating how many bytes remain in the current
              payload data. Returns zero if and only if no elements remain in
-             the current payload. (Thus the mnemonic _H_a_s_-_m_o_r_e)
+             the current payload. (Thus the mnemonic Has-more)
 
      ,e (payload-each: ??? body -> ???)
                    Secondary: [reg = "p"]
-             For each value in the current payload, set _r_e_g to that value and
-             execute _b_o_d_y.  This does not modify the current payload data. The
-             result of the payload data having been altered after _b_o_d_y exits
+             For each value in the current payload, set reg to that value and
+             execute body.  This does not modify the current payload data. The
+             result of the payload data having been altered after body exits
              is undefined.
 
      ,E (payload-each-kv: ??? body -> ???)
                    Secondary: [key-reg = "k"] [val-reg = "v"]
-             For each key-value pair in the current payload, set _k_e_y_-_r_e_g to
-             the key and _v_a_l_-_r_e_g to the value, then execute _b_o_d_y.  This does
+             For each key-value pair in the current payload, set key-reg to
+             the key and val-reg to the value, then execute body.  This does
              not modify the current payload data. The result of the payload
-             data having been altered after _b_o_d_y exits is undefined.
+             data having been altered after body exits is undefined.
 
      ,i (payload-datum-at-index: index -> value)
-             Pushes the payload element at _i_n_d_e_x, where 0 is the index of the
-             first element. This operation requires a linear scan of the pay-
+             Pushes the payload element at index, where 0 is the index of the
+             first element. This operation requires a linear scan of the pay‐
              load data.
 
      ,I (payload-num-indices: () -> count)
@@ -460,7 +490,7 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
              key. This opretation requires a linear scan of the payload data.
 
      ,/ VV (payload-set-property: value -> ())
-             Sets the property _V_V to _v_a_l_u_e.  Properties are:
+             Sets the property VV to value.  Properties are:
 
              ps (payload-start, default ",$") The delimiter that separates
                      code from payload in the main body.
@@ -468,7 +498,7 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
              vd (value-delimiter, default "ws" (see ",s")) The delimiter that
                      separates elements in the payload data.
 
-             ov (output-v-delimiter, default ", ") The string to separate con-
+             ov (output-v-delimiter, default ", ") The string to separate con‐
                      tiguous normal values on output.
 
              ok (output-kv-delimiter, default ", ") The string to separate
@@ -477,7 +507,7 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
              os (output-kvs-delimiter, default "\n") The string to separate
                      key-value pairs on output.
 
-             b( b[ b{ b< (balance-paren) Set to any boolean. If true, delim-
+             b( b[ b{ b< (balance-paren) Set to any boolean. If true, delim‐
                      iters are ignored when between yet-unbalanced pairs of
                      the given type of parenthesis character. If false, the
                      characters are treated normally. Default is true for ([{,
@@ -490,23 +520,23 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
                      done after this step. Default is true for ([{, false for
                      <.
 
-             ts (trim-space, default true) Set to any boolean. If true, extra-
+             ts (trim-space, default true) Set to any boolean. If true, extra‐
                      neous spaces around values are trimmed when being
                      extracted.
 
      ,? VV (payload-get-property: () -> value)
-             Pushes the current value of property _V_V.  See ",/".
+             Pushes the current value of property VV.  See ",/".
 
      ,s (payload-space-delimited: () -> ())
-             Sets payload to be delimited by whitespace of any kind, combina-
+             Sets payload to be delimited by whitespace of any kind, combina‐
              tion, and abount. Resets balance and trim properties to defaults.
              If this mode is in use when payload is first extracted (or with
-             any command which alters the payload), leading space in the pay-
+             any command which alters the payload), leading space in the pay‐
              load is skipped. This is indicated in delimiter properties with
              the special string "ws".
 
      ,0 (payload-nul-delimited: () -> ())
-             Sets payload to be delimited by NUL characters, and sets all bal-
+             Sets payload to be delimited by NUL characters, and sets all bal‐
              ance and trim properties to false.
 
      ,l (payload-line-delimited: () -> ())
@@ -517,19 +547,19 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
 
      ,! (payload-from-code: () -> ())
              Extracts the payload from the suffix from the top-level primary
-             code, using the current _p_a_y_l_o_a_d_-_s_t_a_r_t delimiter. This is automat-
+             code, using the current payload-start delimiter. This is automat‐
              ically done if no payload has ever been extracted when a command
              that accesses the payload data is run.
 
      ,f (payload-from-file: filename -> ())
-             Reads the entire contents of _f_i_l_e_n_a_m_e and uses it as payload
+             Reads the entire contents of filename and uses it as payload
              data.
 
      ,F (payload-from-glob: glob -> ())
-             Accumulates all filenames matching _g_l_o_b and stores them into the
+             Accumulates all filenames matching glob and stores them into the
              payload data, NUL-delimited. Implicitly executes ",0" after.
 
-   CCOONNTTRROOLL SSTTRRUUCCTTUURREESS
+   CONTROL STRUCTURES
      d (defun: name body -> ())
              Defines the command of the given name, which may be standard (one
              character long) or long (more than one character long). It is an
@@ -543,33 +573,33 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
 
      e (each: ??? string body -> ???)
                    Secondary: [reg = "c"]
-             For each character in _s_t_r_i_n_g, set _r_e_g to a string with that char-
-             acter as its only content, then execute _b_o_d_y.
+             For each character in string, set reg to a string with that char‐
+             acter as its only content, then execute body.
 
      f (for: ??? to body -> ???)
                    Secondary: [from = 0] [reg = "i"] [increment = +1 or -1]
-             Set _r_e_g to _f_r_o_m.  Execute _b_o_d_y, then add _i_n_c_r_e_m_e_n_t to _r_e_g.  If
-             _r_e_g has not moved to the other side of _t_o from whence it started
-             and is not equal to _t_o, the command repeats. If _i_n_c_r_e_m_e_n_t is not
-             given, it defaults to +1 if _t_o is greater than _f_r_o_m, or -1 other-
+             Set reg to from.  Execute body, then add increment to reg.  If
+             reg has not moved to the other side of to from whence it started
+             and is not equal to to, the command repeats. If increment is not
+             given, it defaults to +1 if to is greater than from, or -1 other‐
              wise.
 
      i (if: ??? condition then else -> ???)
-             If _c_o_n_d_i_t_i_o_n is a true boolean, executes _t_h_e_n; otherwise, exe-
-             cutes _e_l_s_e.  Other than the three arguments given, the effect on
+             If condition is a true boolean, executes then; otherwise, exe‐
+             cutes else.  Other than the three arguments given, the effect on
              the interpreter is entirely dependent on the code executed. Note:
-             _c_o_n_d_i_t_i_o_n is a _v_a_l_u_e, not code to execute. The code
+             condition is a value, not code to execute. The code
                    (1 2=)('y)('n)i.
              will print "y" since "1 2=" is a true string. For the desired
              effect, the code should read
                    1 2=('y)('n)i.
 
      I (if-short: ??? condition then -> ???)
-             The same as if except that it does nothing if _c_o_n_d_i_t_i_o_n is false.
+             The same as if except that it does nothing if condition is false.
 
      Q ... (long-command: ??? -> ???)
              Reads characters from the code until end of input or whitespace
-             is encountered. These characters (excluding the leading "Q") con-
+             is encountered. These characters (excluding the leading "Q") con‐
              stitute a long command name. The command corresponding to this
              name is executed. The way the interpreter is affected depends
              entirely on what the command does.
@@ -581,18 +611,18 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
 
      V t (save-code-contextual: name code -> ())
              Like save-code, but also restricts the definition to the context
-             indicated by _t.  If _t is "s", the whole context must match; if it
-             is "e", only the extension must match. No other values of _t are
+             indicated by t.  If t is "s", the whole context must match; if it
+             is "e", only the extension must match. No other values of t are
              permitted.
 
      w (while: ??? condition body -> ???)
-             Executes _c_o_n_d_i_t_i_o_n and pops a value from the stack. If it is
-             false, the command stops. Otherwise, _b_o_d_y is executed and the
-             command repeats. Notice that unlike if, _c_o_n_d_i_t_i_o_n is code to
+             Executes condition and pops a value from the stack. If it is
+             false, the command stops. Otherwise, body is executed and the
+             command repeats. Notice that unlike if, condition is code to
              evaluate on each iteration, instead of a value by itself.
 
      W (while-short: ??? body -> ???)
-             Executes _c_o_d_e and pops a value from the stack. If it is true, the
+             Executes code and pops a value from the stack. If it is true, the
              command repeats.
 
      X (eval: ??? code -> ???)
@@ -600,11 +630,11 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
              way the interpreter is affected depends entirely on what the code
              does.
 
-   CCOONNTTEEXXTT
+   CONTEXT
      All context commands are prefixed with @.  Any occurrance of "..." in
      these commands indicates that a string is read until the next whitespace
      character. The string "matches" if the glob defined by the string which
-     was read (see fnmatch(3)) matches the current context (as with --cc ).
+     was read (see fnmatch(3)) matches the current context (as with -c ).
 
      @= ... (context-set: () -> ())
          The context is made active if matches, inactive if does not match.
@@ -634,18 +664,18 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
          Pushes the filename extension of the context, including the leading
          dot, if present; otherwise, an empty string.
 
-   HHIISSTTOORRYY//LLIIBBRRAARRYY
+   HISTORY/LIBRARY
      h (history-access: () -> entry)
                    Secondary: [off = 0]
-             Accesses the item in history at (off+implicit).  _i_m_p_l_i_c_i_t begins
+             Accesses the item in history at (off+implicit).  implicit begins
              at 0 and is incremented every time history-access is invoked.
 
      H (suppress-history: () -> ())
              Prevents the current code from being added to the history.
 
-   EEXXTTEERRNNAALL CCOOMMMMAANNDDSS
+   EXTERNAL COMMANDS
      b (shell-script: input script -> output)
-             Executes ".Ar $SHELL -c _s_c_r_i_p_t _" using _i_n_p_u_t as its standard
+             Executes ".Ar $SHELL -c script " using input as its standard
              input. Output is accumulated and pushed onto the stack when the
              command completes.
 
@@ -657,8 +687,8 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
              given: They are passed to the program verbatim (this means, for
              example, that no quoting is necessary). Example:
                    yu."echo" "hello" "world"B. --> hello world
-             Standard input is provided by _i_n_p_u_t; standard output is accumu-
-             lated into _o_u_t_p_u_t and pushed when the command completes.
+             Standard input is provided by input; standard output is accumu‐
+             lated into output and pushed when the command completes.
 
      j ... (sed: input -> output, or input script -> output)
              Executes "sed -r" on the given input, pushing the output onto the
@@ -668,21 +698,21 @@ CCAATTEEGGOORRIICCAALL CCOOMMMMAANNDD RREEFFEERREENNCC
              where
                    ${STATEMENT} = [a-zA-Z](.)[^\1]*\1[^\1]*\1[a-zA-Z]*
              If no script follows the command, it is instead popped from the
-             stack. The environment variable _T_G_L___S_E_D can be used to override
+             stack. The environment variable TGL_SED can be used to override
              the name of the sed command.
 
      J (perl: input script -> output)
              INvokes "perl -E" with the given script and standard input. The
-             environment variable _T_G_L___P_E_R_L can be set to override the location
+             environment variable TGL_PERL can be set to override the location
              of the perl executable.
 
      t (tcl: input script -> output)
              Invokes "tclsh" with the given input and script, and pushes the
              output onto the stack. The executable name can be overridden with
-             the environment variable _T_G_L___T_C_L.
+             the environment variable TGL_TCL.
 
-CCOOMMMMAANNDD IINNDDEEXX
-   BBYY IINNVVOOCCAATTIIOONN
+COMMAND INDEX
+   BY INVOCATION
      a       auto-write
 
      b       shell-script
@@ -863,7 +893,7 @@ CCOOMMMMAANNDD IINNDDEEXX
 
      ~       not
 
-   BBYY NNAAMMEE
+   BY NAME
      add                            +
 
      and                            &
@@ -1040,7 +1070,7 @@ CCOOMMMMAANNDD IINNDDEEXX
 
      xor                            ^
 
-EENNVVIIRROONNMMEENNTT
+ENVIRONMENT
      SHELL   The command to use to run shell commands.
 
      TGL_SED
@@ -1052,7 +1082,7 @@ EENNVVIIRROONNMMEENNTT
      TGL_TCL
              The command to use instead of "tclsh" for the tcl builtin.
 
-FFIILLEESS
+FILES
      ~/.tgl  The default location of the user library. This is a TGL script
              which is automatically read when TGL starts, and any commands
              affecting the library write to it. It can be overridden with the
@@ -1060,14 +1090,14 @@ FFIILLEESS
 
      ~/.tgl_registers
              The default location of the register persistence file. This is a
-             binary file used to save and restore registers between invoca-
+             binary file used to save and restore registers between invoca‐
              tions of TGL.
 
-EEXXAAMMPPLLEESS
-   HHEELLLLOO WWOORRLLDD
+EXAMPLES
+   HELLO WORLD
        "Hello, world!".
 
-   9999 BBOOTTTTLLEESS OOFF BBEEEERR
+   99 BOTTLES OF BEER
        99Rc"bottles"RBrcRC(rc#-1>)(
        "$C $B of beer on the wall\n$C $B of beer\n".
        rc1-Rc
@@ -1078,7 +1108,7 @@ EEXXAAMMPPLLEESS
          "Take one down, pass it around\n$C $B of beer on the wall\n"
        )i.)w
 
-   CCAASSEE SSTTAATTEEMMEENNTTSS,, HHIISSTTOORRYY
+   CASE STATEMENTS, HISTORY
      Quickly generate case statements for each digit:
            10("`case '$i':\n".)f
 
@@ -1088,7 +1118,7 @@ EEXXAAMMPPLLEESS
      Resusing the new macro:
            Qnc
 
-   CCOONNTTEEXXTT
+   CONTEXT
      Creating a macro to place strings into C-strings (quoting and escaping):
 
        @=*.h @|*.c
