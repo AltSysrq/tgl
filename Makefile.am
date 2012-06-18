@@ -1,1 +1,2 @@
-SUBDIRS = src
+SUBDIRS = src doc
+doc_DATA = README COPYING INSTALL

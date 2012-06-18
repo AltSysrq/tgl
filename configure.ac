@@ -31,5 +31,5 @@ AC_CHECK_FUNCS([dup2 memmove memset strerror mkstemp])
 AC_CHECK_FUNCS([getopt_long], AC_DEFINE(_GNU_SOURCE, [],
                               [Use GNU Extensions if available]))
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile doc/Makefile])
 AC_OUTPUT
