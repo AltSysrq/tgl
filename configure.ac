@@ -7,6 +7,7 @@ AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/tgl.c])
 AC_CONFIG_HEADERS([config.h])
 AM_SILENT_RULES(yes)
+AM_MAINTAINER_MODE
 
 # Checks for programs.
 AC_PROG_CC
