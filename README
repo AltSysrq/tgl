@@ -1145,4 +1145,13 @@ EXAMPLES
        @=*.h @|*.c
        "cq" (u.\\(\\)\n(\n)\r(\r)\t(\t)\"(\")\e(\e)\f(\f)\v(\v)m"\"%\"") D
 
+   EXTERNAL COMMANDS, ABUSE
+     The following program will produce a graph (using dot) in deps.png which
+     shows an include dependency graph of your C project.
+
+     "digraph{rankdir=LR\n"Rgy"find src -name '*.[hc]'"b,R(rp
+     js:.*/::g Rb("grep '$b\"' '$o'"yxusb;rs~(rg
+     "\"$o\" -> \"$p\"\n"cRg)I)uo,e),erg"}\n"c
+     "dot -odeps.png -Tpng"b
+
 BSD                              16 June 2012                              BSD

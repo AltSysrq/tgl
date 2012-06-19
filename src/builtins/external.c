@@ -373,7 +373,7 @@ int builtin_sed(interpreter* interp) {
   if (sscript) {
     script = string_to_cstr(sscript);
   } else {
-    script = tmalloc(interp->ip - begin);
+    script = tmalloc(interp->ip - begin + 1);
     memcpy(script, string_data(interp->code) + begin, interp->ip - begin);
     script[interp->ip - begin] = 0;
   }

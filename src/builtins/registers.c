@@ -34,7 +34,7 @@ int builtin_write(interpreter* interp) {
   if (!(val = stack_pop(interp))) UNDERFLOW;
 
   free(interp->registers[curr(interp)]);
-  interp->registers[curr(interp)] = dupe_string(val);
+  interp->registers[curr(interp)] = val;
   touch_reg(interp, curr(interp));
   return 1;
 }

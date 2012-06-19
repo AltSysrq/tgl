@@ -1184,3 +1184,12 @@ Creating a macro to place strings into C-strings (quoting and escaping):
   @=*.h @|*.c
   \(dqcq\(dq (u.\e\e(\e\e)\en(\en)\er(\er)\et(\et)\e\(dq(\e\(dq)\ee(\ee)\ef(\ef)\ev(\ev)m\(dq\e\(dq%\e\(dq\(dq) D
 .Ed
+.Ss EXTERNAL COMMANDS, ABUSE
+The following program will produce a graph (using dot) in deps.png which shows
+an include dependency graph of your C project.
+.Bd -literal
+\(dqdigraph{rankdir=LR\en\(dqRgy\(dqfind src -name '*.[hc]'\(dqb,R(rp
+js:.*/::g Rb(\(dqgrep '$b\e\(dq' '$o'\(dqyxusb;rs~(rg
+\(dq\e\(dq$o\e\(dq -> \e\(dq$p\e\(dq\en\(dqcRg)I)uo,e),erg\(dq}\en\(dqc
+\(dqdot -odeps.png -Tpng\(dqb
+.Ed

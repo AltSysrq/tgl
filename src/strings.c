@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <ctype.h>
 
 #include "tgl.h"
 #include "strings.h"

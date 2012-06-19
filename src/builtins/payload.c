@@ -39,7 +39,6 @@ void payload_data_destroy(payload_data* p) {
 string payload_extract_prefix(string code, interpreter*interp) {
   unsigned prefixEnd, delimLen=0, i, j;
   string new_code;
-  payload_data* p = &interp->payload;
 
   for (i = 0; i < code->len; ++i) {
     if (string_data(code)[i] == '|') {
@@ -421,6 +420,8 @@ static int payload_recurse(interpreter* interp) {
   /* Restore old payload data */
   payload_data_destroy(&interp->payload);
   memcpy(&interp->payload, &backup, sizeof(payload_data));
+
+  free(code);
 
   return status;
 }
