@@ -74,7 +74,11 @@ int string_to_int(string s, signed* dst) {
   signed result = 0;
   unsigned i = 0, base = 10, digit;
   byte* dat = string_data(s);
-  if (!s->len) return 0;
+
+  /* Skip leading whitespace. */
+  while (i < s->len && isspace(dat[i])) ++i;
+  /* If no non-whitespace is present, not a valid integer. */
+  if (i >= s->len) return 0;
 
   /* Check for leading sign */
   if (dat[i] == '+') {
@@ -93,6 +97,10 @@ int string_to_int(string s, signed* dst) {
     if (i == s->len) {
       *dst = 0;
       return 1;
+    } else if (isspace(dat[i])) {
+      /* Possibly 0 with trailing whitespace */
+      result = 0;
+      goto trailing_space;
     }
 
     if (dat[i] == 'x' || dat[i] == 'X') {
@@ -119,7 +127,7 @@ int string_to_int(string s, signed* dst) {
     else if (dat[i] >= 'A' && dat[i] <= 'F')
       digit = dat[i] + 10 - 'A';
     else
-      return 0;
+      break;
 
     /* Ensure digit is valid in this base */
     if (digit >= base)
@@ -128,6 +136,13 @@ int string_to_int(string s, signed* dst) {
     result *= base;
     result += digit;
   }
+
+  trailing_space:
+  /* Skip trailing whitespace */
+  while (i < s->len && isspace(dat[i])) ++i;
+
+  /* Must have hit the end of the string by this point. */
+  if (i < s->len) return 0;
 
   /* Everything was OK */
   if (negative) result = -result;
