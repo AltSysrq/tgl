@@ -456,6 +456,12 @@ CATEGORICAL COMMAND REFERENCE
              Sets the current payload data to the string popped from the
              stack.
 
+     ,x (payload-recurse: payload code -> ())
+             Saves all current payload state, then sets the payload to payload
+             and executes code.  After execution, payload state (including
+             delimiters and such) is reverted to what is was before execution
+             of this command.
+
      ,h (payload-length-bytes: () -> byte-count)
              Pushes an integer indicating how many bytes remain in the current
              payload data. Returns zero if and only if no elements remain in
@@ -838,6 +844,8 @@ COMMAND INDEX
 
      ,s      payload-space-delimited
 
+     ,x      payload-recurse
+
      ,!      payload-from-code
 
      ,$      payload-start
@@ -1020,6 +1028,8 @@ COMMAND INDEX
      payload-print-kv               ,:
 
      payload-read                   ,r
+
+     payload-recurse                ,x
 
      payload-set-property           ,/
 

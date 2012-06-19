@@ -434,6 +434,13 @@ of zero indicates all pairs.
 Pushes the string representation of the current payload data onto the stack.
 .It ",R" (payload-write: payload -> ())
 Sets the current payload data to the string popped from the stack.
+.It ",x" (payload-recurse: payload code -> ())
+Saves all current payload state, then sets the payload to
+.Ar payload
+and executes
+.Ar code .
+After execution, payload state (including delimiters and such) is reverted to
+what is was before execution of this command.
 .It ",h" (payload-length-bytes: () -> byte-count)
 Pushes an integer indicating how many bytes remain in the current payload
 data. Returns zero if and only if no elements remain in the current
@@ -860,6 +867,8 @@ payload-read
 payload-write
 .It ",s"
 payload-space-delimited
+.It ",x"
+payload-recurse
 .It ",!"
 payload-from-code
 .It ",$"
@@ -1045,6 +1054,8 @@ not
 .Li ",:"
 .It payload-read
 .Li ",r"
+.It payload-recurse
+.Li ",x"
 .It payload-set-property
 .Li ",/"
 .It payload-space-delimited

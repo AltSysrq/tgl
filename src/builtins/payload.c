@@ -394,6 +394,37 @@ static int payload_write(interpreter* interp) {
   return 1;
 }
 
+static int payload_recurse(interpreter* interp) {
+  int status;
+  string new_payload, code;
+  payload_data backup;
+
+  if (!(stack_pop_strings(interp, 2, &code, &new_payload)))
+    UNDERFLOW;
+
+  /* Preserve old payload */
+  memcpy(&backup, &interp->payload, sizeof(payload_data));
+  /* Dupe strings that can't be shared */
+  if (backup.data_start_delim > PAYLOAD_LINE_DELIM)
+    backup.data_start_delim = dupe_string(backup.data_start_delim);
+  if (backup.value_delim > PAYLOAD_LINE_DELIM)
+    backup.value_delim = dupe_string(backup.value_delim);
+  backup.output_kv_delim = dupe_string(backup.output_kv_delim);
+  backup.output_v_delim = dupe_string(backup.output_v_delim);
+  backup.output_kvs_delim = dupe_string(backup.output_kvs_delim);
+
+  /* Swap subordinate payload in */
+  interp->payload.data = interp->payload.data_base = NULL;
+  set_payload(interp, new_payload);
+  /* Run subordinate code */
+  status = exec_code(interp, code);
+  /* Restore old payload data */
+  payload_data_destroy(&interp->payload);
+  memcpy(&interp->payload, &backup, sizeof(payload_data));
+
+  return status;
+}
+
 static int payload_set_property(interpreter* interp) {
   byte pa, pb;
   string value;
@@ -1037,6 +1068,7 @@ static struct {
   { ':', payload_print_kv },
   { 'r', payload_read },
   { 'R', payload_write },
+  { 'x', payload_recurse },
   { '/', payload_set_property },
   { '?', payload_get_property },
   { 'h', payload_length_bytes },
