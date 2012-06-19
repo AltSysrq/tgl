@@ -10,6 +10,8 @@
 #include "../interp.h"
 #include "payload.h"
 
+static void set_payload(interpreter* interp, string data);
+
 void payload_data_init(payload_data* p) {
   p->data = p->data_base = p->global_code = NULL;
   p->data_start_delim = convert_string(",$");
@@ -34,9 +36,10 @@ void payload_data_destroy(payload_data* p) {
   free(p->output_kvs_delim);
 }
 
-string payload_extract_prefix(string code, payload_data* p) {
+string payload_extract_prefix(string code, interpreter*interp) {
   unsigned prefixEnd, delimLen=0, i, j;
   string new_code;
+  payload_data* p = &interp->payload;
 
   for (i = 0; i < code->len; ++i) {
     if (string_data(code)[i] == '|') {
@@ -58,9 +61,8 @@ string payload_extract_prefix(string code, payload_data* p) {
   if (delimLen == 0) return code;
 
   /* Extract payload and code proper */
-  if (p->data) free(p->data_base);
-  p->data = p->data_base = create_string(string_data(code),
-                                         string_data(code)+prefixEnd);
+  set_payload(interp, create_string(string_data(code),
+                                    string_data(code)+prefixEnd));
   new_code = create_string(string_data(code)+prefixEnd+delimLen,
                            string_data(code)+code->len);
   free(code);
@@ -227,8 +229,6 @@ static int find_opt_delim(string delim, string haystack,
   return 1;
 }
 
-static void set_payload(interpreter* interp, string data);
-
 /* Sets payload data to that extracted from code, using the current data-start
  * delimiter. Returns whether extraction succeeded.
  */
@@ -387,13 +387,10 @@ static int payload_read(interpreter* interp) {
 
 static int payload_write(interpreter* interp) {
   string s;
-  if (DATA)
-    free(interp->payload.data_base);
 
   if (!(s = stack_pop(interp))) UNDERFLOW;
 
-  DATA = interp->payload.data_base = dupe_string(s);
-  free(s);
+  set_payload(interp, s);
   return 1;
 }
 

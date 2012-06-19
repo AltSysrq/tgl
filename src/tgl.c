@@ -253,7 +253,7 @@ static int exec_file(interpreter* interp, FILE* file,
   }
 
   if (prefix_payload)
-    input = payload_extract_prefix(input, &interp->payload);
+    input = payload_extract_prefix(input, interp);
 
   if (set_global_code)
     interp->payload.global_code = input;

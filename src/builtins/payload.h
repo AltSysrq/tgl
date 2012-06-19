@@ -6,6 +6,8 @@
 #include "../tgl.h"
 #include "../strings.h"
 
+struct interpreter;
+
 /* Special values for payload delimiters. */
 #define PAYLOAD_WS_DELIM ((string)1)
 #define PAYLOAD_LINE_DELIM ((string)2)
@@ -35,8 +37,9 @@ void payload_data_init(payload_data*);
 void payload_data_destroy(payload_data*);
 
 /* Scans the given string for prefix data, storing it into the given
- * payload. Returns the part of the string which did not contain prefix data.
+ * interpreter's payload. Returns the part of the string which did not contain
+ * prefix data.
  */
-string payload_extract_prefix(string, payload_data*);
+string payload_extract_prefix(string, struct interpreter*);
 
 #endif /* PAYLOAD_H_ */
