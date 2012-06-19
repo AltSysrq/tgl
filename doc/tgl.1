@@ -690,6 +690,7 @@ Prevents the current code from being added to the history.
 .Ss EXTERNAL COMMANDS
 .Bl -tag -width Ds
 .It b (shell-script: input script -> output)
+.Dl Secondary: [status-reg = null]
 Executes \(dq\
 .Ar $SHELL
 -c
@@ -697,9 +698,14 @@ Executes \(dq\
 using
 .Ar input
 as its standard input. Output is accumulated and pushed onto the stack when the
-command completes.
+command completes. If
+.Ar status-reg
+is specified, the exit code of the child process is stored as an integer to
+that register. Otherwise, it is an error if the child exits with a non-zero
+status. In any case, an abnormally terminated process (eg, one that was killed)
+results in an error.
 .It B (shell-command: input args{n} n -> output, or input ... -> output)
-.Dl Secondary: [stack-depth-of-input = null]
+.Dl Secondary: [stack-depth-of-input = null] [status-reg = null]
 Execute the given shell command, the arguments pushed in the order they will be
 used. The first argument is the command to run. No additional processing is
 performed on the arguments given: They are passed to the program verbatim (this
@@ -709,7 +715,12 @@ Standard input is provided by
 .Ar input ;
 standard output is accumulated into
 .Ar output
-and pushed when the command completes.
+and pushed when the command completes. If
+.Ar status-reg
+is specified, the exit code of the child process is stored as an integer to
+that register. Otherwise, it is an error if the child exits with a non-zero
+status. In any case, an abnormally terminated process (eg, one that was killed)
+results in an error.
 .It j ... (sed: input -> output, or input script -> output)
 Executes \(dqsed -r\(dq on the given input, pushing the output onto the
 stack. The script is normally read in after the command name itself, and

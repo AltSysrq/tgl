@@ -19,10 +19,14 @@
  * The process's standard output is captured and accumulated into a
  * string. Standard error is inherited from Tgl.
  *
+ * If return_status is non-NULL, write the exit status of the child there
+ * instead of considering a non-zero exit status to be an error. Abnormal
+ * termination still constitutes an error.
+ *
  * On success, the standard output of the process is returned. On error, a
  * message is printed to standard error and NULL is returned.
  */
-static string invoke_external(char** argv, string input) {
+static string invoke_external(char** argv, string input, int* return_status) {
   FILE* output_file = NULL, * input_file = NULL;
   int output_fd, input_fd;
   string output;
@@ -106,7 +110,9 @@ static string invoke_external(char** argv, string input) {
             argv[0]);
     goto error;
   }
-  if (WEXITSTATUS(child_status)) {
+  if (return_status) {
+    *return_status = WEXITSTATUS(child_status);
+  } else if (WEXITSTATUS(child_status)) {
     fprintf(stderr, "tgl: error: child process %s exited with code %d\n",
             argv[0], (int)WEXITSTATUS(child_status));
     goto error;
@@ -154,6 +160,15 @@ static string invoke_external(char** argv, string input) {
 int builtin_shell_script(interpreter* interp) {
   string input, sscript, output;
   char* script, *argv[4];
+  byte status_reg;
+  signed status_reg_value, * status_reg_ptr = NULL;
+
+  /* If a status register is provided, get the register and set the pointer
+   * indicating we want the status returned.
+   */
+  if (!secondary_arg_as_reg(interp->u[0], &status_reg))
+    return 0;
+  if (interp->u[0]) status_reg_ptr = &status_reg_value;
 
   if (!getenv("SHELL")) {
     print_error("$SHELL undefined");
@@ -169,7 +184,7 @@ int builtin_shell_script(interpreter* interp) {
   argv[1] = "-c";
   argv[2] = script;
   argv[3] = NULL;
-  output = invoke_external(argv, input);
+  output = invoke_external(argv, input, status_reg_ptr);
   free(script);
 
   /* If unsuccessful, restore the stack and we're done. */
@@ -179,10 +194,18 @@ int builtin_shell_script(interpreter* interp) {
     return 0;
   }
 
-  /* OK, free the inputs and return success */
+  /* OK, free the inputs and return success.
+   * First, set the status register if requested.
+   */
+  if (status_reg_ptr) {
+    free(interp->registers[status_reg]);
+    interp->registers[status_reg] = int_to_string(status_reg_value);
+    touch_reg(interp, status_reg);
+  }
   free(input);
   free(sscript);
   stack_push(interp, output);
+  reset_secondary_args(interp);
   return 1;
 }
 
@@ -194,6 +217,15 @@ int builtin_shell_command(interpreter* interp) {
   signed argc;
   unsigned i, stack_height;
   stack_elt* elt;
+  byte status_reg;
+  signed status_reg_value, * status_reg_ptr = NULL;
+
+  /* If a status register is provided, get the register and set the pointer
+   * indicating we want the status returned.
+   */
+  if (!secondary_arg_as_reg(interp->u[1], &status_reg))
+    return 0;
+  if (interp->u[1]) status_reg_ptr = &status_reg_value;
 
   if (interp->u[0]) {
     if (!secondary_arg_as_int(interp->u[0], &argc, 0)) return 0;
@@ -248,7 +280,7 @@ int builtin_shell_command(interpreter* interp) {
   argv[argc] = NULL;
 
   /* Run the command, then immediately free memory before checking for error. */
-  output = invoke_external(argv, input);
+  output = invoke_external(argv, input, status_reg_ptr);
   for (i = 0; i < argc; ++i)
     free(argv[i]);
   free(argv);
@@ -256,6 +288,11 @@ int builtin_shell_command(interpreter* interp) {
   if (!output) goto error;
 
   /* OK, clean up and return success */
+  if (status_reg_ptr) {
+    free(interp->registers[status_reg]);
+    interp->registers[status_reg] = int_to_string(status_reg_value);
+    touch_reg(interp, status_reg);
+  }
   for (i = 0; i < argc; ++i)
     free(sargv[i]);
   free(sargv);
@@ -353,7 +390,7 @@ int builtin_sed(interpreter* interp) {
   argv[3] = 0;
 
   /* Execute and clean up */
-  output = invoke_external(argv, input);
+  output = invoke_external(argv, input, NULL);
   free(script);
 
   /* On error, restore stack and return failure */
@@ -388,7 +425,7 @@ int builtin_perl(interpreter* interp) {
   argv[3] = NULL;
 
   /* Invoke and clean up */
-  output = invoke_external(argv, input);
+  output = invoke_external(argv, input, NULL);
   free(script);
 
   if (!output) {
@@ -435,7 +472,7 @@ int builtin_tcl(interpreter* interp) {
   argv[0] = (getenv("TGL_TCL")? getenv("TGL_TCL") : "tclsh");
   argv[1] = tempname;
   argv[2] = NULL;
-  output = invoke_external(argv, input);
+  output = invoke_external(argv, input, NULL);
 
   if (unlink(tempname))
     fprintf(stderr, "tgl: warning: could not delete Tcl script %s: %s\n",

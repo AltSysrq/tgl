@@ -675,12 +675,18 @@ CATEGORICAL COMMAND REFERENCE
 
    EXTERNAL COMMANDS
      b (shell-script: input script -> output)
+                   Secondary: [status-reg = null]
              Executes ".Ar $SHELL -c script " using input as its standard
              input. Output is accumulated and pushed onto the stack when the
-             command completes.
+             command completes. If status-reg is specified, the exit code of
+             the child process is stored as an integer to that register. Oth‐
+             erwise, it is an error if the child exits with a non-zero status.
+             In any case, an abnormally terminated process (eg, one that was
+             killed) results in an error.
 
      B (shell-command: input args{n} n -> output, or input ... -> output)
-                   Secondary: [stack-depth-of-input = null]
+                   Secondary: [stack-depth-of-input = null] [status-reg =
+                   null]
              Execute the given shell command, the arguments pushed in the
              order they will be used. The first argument is the command to
              run. No additional processing is performed on the arguments
@@ -688,7 +694,12 @@ CATEGORICAL COMMAND REFERENCE
              example, that no quoting is necessary). Example:
                    yu."echo" "hello" "world"B. --> hello world
              Standard input is provided by input; standard output is accumu‐
-             lated into output and pushed when the command completes.
+             lated into output and pushed when the command completes. If
+             status-reg is specified, the exit code of the child process is
+             stored as an integer to that register. Otherwise, it is an error
+             if the child exits with a non-zero status. In any case, an abnor‐
+             mally terminated process (eg, one that was killed) results in an
+             error.
 
      j ... (sed: input -> output, or input script -> output)
              Executes "sed -r" on the given input, pushing the output onto the
