@@ -2,6 +2,8 @@
 #ifndef INTERP_H_
 #define INTERP_H_
 
+#include <time.h>
+
 #include "strings.h"
 #include "builtins/payload.h"
 
